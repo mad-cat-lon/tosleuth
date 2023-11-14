@@ -1,6 +1,6 @@
 import logging
 import chromadb
-from core import utils
+import utils
 
 
 class VectorStore:
