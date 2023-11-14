@@ -1,0 +1,29 @@
+{
+    "manifest_version": 2,
+    "name": "TOSleuth",
+    "version": "1.0",
+    "description": "Analyze website terms-of-service and privacy agreements with AI",
+    "permissions": [
+      "activeTab",
+      "<all_urls>",
+      "storage",
+      "downloads"
+    ],
+    "icons": {
+      "48": "icons/icon.png"
+    },
+    "background": {
+      "scripts": ["js/background.js"],
+      "persistent": false
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["js/content.js"]
+      }
+    ],
+    "browser_action": {
+      "default_icon": "icons/icon.jpg",
+      "default_popup": "html/popup.html"
+    }
+  }
