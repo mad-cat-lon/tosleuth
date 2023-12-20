@@ -22,22 +22,6 @@ Content, you may expose yourself to liability if you post or share Content witho
     "reason": "This text explicitly mentions that the user waives moral rights with respect to their content, which aligns with the statement. The other texts do not directly address moral rights and are unrelated to the given statement."
 }}
 
-## USER INPUT: 
-Given the statement "The service can delete specific content without prior notice and without a reason", which of the following texts, if any, answer it? Think carefully. 
-
-1) "Also, please note that if you knowingly misrepresent that any activity or material on our Service is infringing, you may be liable to Reddit for certain costs and damages. If we remove Your Content in response to a copyright or trademark notice, we will notify you via Reddit’s private messaging system."
-
-2)  "we may, in our sole discretion, delete or remove Your Content at any time and for any reason"
-
-3) "You also agree that we may remove metadata associated with Your Content, and"
-
-4) "If you believe Your Content was wrongly removed due to a mistake or misidentification in a copyright notice, you can send a counter notification via our Copyright Counter Notice Form or to our Copyright Agent (contact information provided above). Please see 17 U.S.C. § 512(g)(3) for the requirements of a proper counter notification."
-
-## MODEL OUTPUT:
-{{
-    "choice": 2,
-    "reason": "This text explicitly states that the service may delete content at any time and for any reason without prior notice, which aligns with the given statement. The other texts do not directly address this aspect of the service's behavior."
-}}
 <</SYS>>
 
 Given the statement "{query_statement}", which of the following texts, if any, answer it? Think carefully. 
