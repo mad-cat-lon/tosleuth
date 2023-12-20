@@ -5,8 +5,6 @@ from pydantic import BaseModel
 # from llama_cpp import Llama
 from prompts import make_prompt
 import json
-import fireworks.client
-fireworks.client.api_key = ""
 import asyncio
 import requests
 import pprint
