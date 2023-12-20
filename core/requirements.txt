@@ -2,4 +2,3 @@ fastapi==0.99.1
 typing_extensions==4.8.0
 pydantic==1.10.12
 chromadb==0.4.12
-fireworks-ai==0.8.1
