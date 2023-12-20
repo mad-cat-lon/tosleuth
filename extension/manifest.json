@@ -7,23 +7,19 @@
       "activeTab",
       "<all_urls>",
       "storage",
-      "downloads"
+      "downloads",
+      "http://127.0.0.1:8000/add_from_url"
     ],
     "icons": {
-      "48": "icons/icon.png"
+      "48": "icons/icon.jpg"
     },
     "background": {
       "scripts": ["js/background.js"],
       "persistent": false
     },
-    "content_scripts": [
-      {
-        "matches": ["<all_urls>"],
-        "js": ["js/content.js"]
-      }
-    ],
     "browser_action": {
       "default_icon": "icons/icon.jpg",
+      "default_title": "tosleuth",
       "default_popup": "html/popup.html"
     }
   }
