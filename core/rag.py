@@ -1,6 +1,7 @@
 import logging
 import chromadb
 import utils
+import fireworks.client
 
 
 class VectorStore:
@@ -31,7 +32,7 @@ class VectorStore:
         # VectorStore, but here we just automatically ingest a single 
         # TOS document for testing purposes 
         from pathlib import Path
-        path = Path(__file__).parent.joinpath("reddit_tos.txt")
+        path = Path(__file__).parent.joinpath("facebook_tos.txt")
         with open(path, "r", encoding='utf-8') as f:
             lines = f.readlines()
             for line in lines:
