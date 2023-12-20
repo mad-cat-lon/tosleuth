@@ -11,15 +11,21 @@
       "http://127.0.0.1:8000/add_from_url"
     ],
     "icons": {
-      "48": "icons/icon.jpg"
+      "48": "icons/padlock.png"
     },
     "background": {
       "scripts": ["js/background.js"],
       "persistent": false
     },
     "browser_action": {
-      "default_icon": "icons/icon.jpg",
+      "default_icon": "icons/padlock.png",
       "default_title": "tosleuth",
       "default_popup": "html/popup.html"
+    },
+    "sidebar_action": {
+      "default_icon": "icons/padlock.png",
+      "default_title": "tosleuth",
+      "default_panel": "html/sidebar.html"
+
     }
   }

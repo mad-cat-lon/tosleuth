@@ -15,3 +15,11 @@ document.getElementById('analyze-btn').addEventListener('click', function() {
     document.getElementById('result-log').innerText = 'Analyzing...';
     const tabId = getCurrentTabId();
 });
+
+// TESTING CODE
+document.getElementById('sidebar-test-btn').addEventListener('click', function() {
+    document.getElementById('result-log').innerText = 'Open sidebar to view results';
+    browser.runtime.sendMessage({
+        action: 'testSidebarResults'
+    })
+});

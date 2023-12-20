@@ -33,6 +33,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       filename: message.filename.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.txt'
     });
   }
+  // TODO: Implement server-side scraping so this will actually work with any urls,
+  // not just hardcoded test data in rag.py
   if (message.action === 'retrieveContent') {
     const url = 'http://127.0.0.1:8000/add_from_url';
     // send it to our backend server
@@ -43,9 +45,43 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       },
       body: JSON.stringify({ 'url': message.source })
     })
-    .then(response => response.json()) // Parse JSON response
+    .then(response => {
+      return response.json();
+    })
     .then(data => {
       console.log("Response from backend received: ", data);
+    })
+    .catch(error => {
+      console.log("Error in fetching: ", error);
+    });
+  } 
+  // TESTING CODE FOR SIDEBAR
+  if (message.action === 'testSidebarResults') {
+    const url = 'http://127.0.0.1:8000/query';
+    // send it to our backend server
+    fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      // body: JSON.stringify({ 'url': message.source })
+      // Send test cases to backend server
+      body: JSON.stringify( { 'tosdr_cases': [
+        'This service receives your precise location through GPS coordinates',
+        'Deleted content is not really deleted'
+      ]})
+    })
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      console.log("Response from backend received: ", data);
+      // Send message to sidebar view to render the results from backend
+      browser.runtime.sendMessage({
+        action: 'updateResults',
+        data: data,
+        source: message.source
+      })
     })
     .catch(error => {
       console.log("Error in fetching: ", error);
