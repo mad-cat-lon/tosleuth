@@ -1,8 +1,14 @@
+function removeDuplicates(array) {
+  return array.filter((item,
+    index) => array.indexOf(item) === index);
+}
 function findLegalLinks() {
     const links = Array.from(document.links);
-    const legalLinks = links.filter(link => {
+    let legalLinks = links.filter(link => {
       return /terms|privacy|legal|policy/i.test(link.href);
     });
+    legalLinks = removeDuplicates(legalLinks);
+    console.log(legalLinks);
     legalLinks.forEach(link => {
       // Fetch and download the content
       fetch(link.href)
