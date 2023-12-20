@@ -1,7 +1,6 @@
 import logging
 import chromadb
 import utils
-import fireworks.client
 
 
 class VectorStore:
