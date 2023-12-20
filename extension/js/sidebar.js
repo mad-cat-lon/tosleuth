@@ -9,8 +9,8 @@ function addResults(results) {
         const item = document.createElement('div');
         item.className = 'accordion-item';
 
-        // Add point title
-        item.textContent = result.tosdr_point;
+        // Add case title
+        item.textContent = result.tosdr_case;
 
         // Add icon
         const icon = document.createElement('span');
@@ -24,7 +24,7 @@ function addResults(results) {
         reason.textContent = `${result.reason}`;
         item.appendChild(reason);
         
-        // Add point citation
+        // Add case citation
         const citation = document.createElement('div');
         citation.className = 'item-content';
         citation.textContent = `${result.source_text}`;
