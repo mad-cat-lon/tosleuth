@@ -10,6 +10,13 @@
 ## Playing around with the vector DB
 Run `testing.py` to see how embeddings are retrieved! This code initializes our vector store and allows us to query it interactively. Enter some text and see what snippets of text are returned - play around with the different parameters in `rag.py`, along with the chunking in `utils/chunking.py` to see how it affects the search results
 
+## Running the Firefox extension 
+Go to `about:debugging#/runtime/this-firefox`
+Click "Load temporary addon"
+Navigate to the extension folder (under `/extensions`)
+Click `manifest.json`
+The extension should be loaded until the browser is restarted
+
 ## Running the backend server 
 `cd core`
 
