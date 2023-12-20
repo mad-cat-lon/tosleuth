@@ -12,8 +12,11 @@ Run `testing.py` to see how embeddings are retrieved! This code initializes our 
 
 ## Running the backend server 
 `cd core`
+
 `uvicorn server:app`
 Ask me for the API key! 
+
+You can make requests to 127.0.0.1:8000 using [Postman](https://www.postman.com/)
 ## File structure 
 There are two main components to our product: the frontend, which is the browser extension, and the backend, which contains the embedding database, web server and code to run the model. The extension makes requests from the web server and uses the responses to display data to the user. Currently, only the server portion is functional (only analyzing 1 file for testing purposes)
 
