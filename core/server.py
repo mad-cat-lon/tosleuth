@@ -27,7 +27,7 @@ class RagQuery(BaseModel):
     
 
 class LLMQuery(BaseModel):
-    tosdr_point_texts: List[str]
+    tosdr_points: List[str]
     
 
 # # Load our model
@@ -84,7 +84,7 @@ async def make_query(query: LLMQuery):
     # For each point, search the vector database for results
     query_response = await asyncio.to_thread(
         storage.query,
-        query_texts=query.tosdr_point_texts,
+        query_texts=query.tosdr_points,
         n_results=4
     )
     llm_response = {
@@ -95,7 +95,7 @@ async def make_query(query: LLMQuery):
     # and insert the query text and results into the prompt
     for index, search_results in enumerate(query_response["documents"]):
         prompt = make_prompt(
-            query_statement=query.tosdr_point_texts[index],
+            query_statement=query.tosdr_points[index],
             vector_results=search_results
         )
         url = "https://api.fireworks.ai/inference/v1/chat/completions"
@@ -135,6 +135,7 @@ async def make_query(query: LLMQuery):
                 print(search_results)
                 source_text = search_results[choice-1] if choice != 0 else ""
                 result["source_text"] = source_text
+                result["tosdr_point"] = query.tosdr_points[index]
             except json.JSONDecodeError as e:
                 print(f"Error decoding the model response: {e}")
                 result = {}
