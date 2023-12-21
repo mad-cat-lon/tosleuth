@@ -125,12 +125,12 @@ async def make_query(query: LLMQuery):
                 result["source_text"] = source_text
                 result["tosdr_case"] = query.tosdr_cases[index]
                 # Get the metadata associated with the selected source document
+                result["source_doc"] = query_response["metadatas"][index][0]["name"]
+                result["source_url"] = query_response["metadatas"][index][0]["url"]
+                result["source_service"] = query_response["metadatas"][index][0]["service"]
             except json.JSONDecodeError as e:
                 print(f"Error decoding the model response: {e}")
                 result = {}
-            result["source_doc"] = query_response["metadatas"][index][0]["name"]
-            result["source_url"] = query_response["metadatas"][index][0]["url"]
-            result["source_service"] = query_response["metadatas"][index][0]["service"]
             llm_response["results"].append(result)
         except Exception as e:
             print(f"An error occurred while constructing the response: {e}")
