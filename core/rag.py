@@ -20,25 +20,13 @@ class VectorStore:
     """
     def __init__(self, embedding_model=None):
         logging.info("Initalizing in-memory client...")
-        client = chromadb.Client()
-        self.collection = client.get_or_create_collection("tos")
+        client = chromadb.PersistentClient(path="vecdb")
+        self.collection = client.get_or_create_collection("vecdb")
         self.documents = []
         self.metadatas = []
         self.ids = []
         self.id = 0
         self.index = 0
-        # Normally we would call add_to_collection() after initializing
-        # VectorStore, but here we just automatically ingest a single 
-        # TOS document for testing purposes 
-        from pathlib import Path
-        path = Path(__file__).parent.joinpath("facebook_tos.txt")
-        with open(path, "r", encoding='utf-8') as f:
-            lines = f.readlines()
-            for line in lines:
-                self.documents.append(str(line))
-            ids = [str(i) for i in range(0, len(self.documents))]
-            self.collection.add(ids=ids, documents=self.documents)
-        print("Loaded file.")
         
     def add_to_collection(self, documents, metadatas) -> None:
         """
@@ -68,19 +56,22 @@ class VectorStore:
         self.index += len(documents)
         logging.info(f"Added {len(documents)} to the collection.")
 
-    def load_from_text(self, text, name, source_service):
-        logging.info(f"Reading text {name} from {source_service}")
+    def load_from_text(self, service, url, name, text):
+        logging.info(f"Reading text {name} from {service}")
         # Add name and source_service to metadata later 
-        chunks, metadatas = utils.chunk_raw_text_by_newline(text)
+        chunks = utils.chunk_raw_text_by_newline(text)
+        metadatas = [{"name": name, "service": service, "url": url} for _ in chunks]
         self.add_to_collection(chunks, metadatas)
+        print(f"Added document {name} from service {service} to vectorDB")
 
     def load_from_file(self, file_path: str, file_name):
         with open(file_path, "r", encoding="utf-8") as f:
             logging.info(f"Reading file {file_path}")
-            chunks, metadatas = utils.chunk_raw_text_by_newline(f.read())
+            chunks = utils.chunk_raw_text_by_newline(f.read())
+            metadatas = []
             self.add_to_collection(chunks, metadatas)
     
-    def query(self, query_texts, n_results=4, where=None, where_document=None):
+    def query(self, query_texts, n_results=4, where=None, where_document=None, include=["documents"]):
         """
         Just a wrapper around ChromaDB's query for now
         """
@@ -88,7 +79,8 @@ class VectorStore:
             query_texts=query_texts,
             n_results=n_results,
             where=where,
-            where_document=where_document
+            where_document=where_document,
+            include=include
         )
         # for doc in results["documents"]:
         #     print("="*40)

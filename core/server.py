@@ -9,34 +9,24 @@ import asyncio
 import requests
 import pprint
 
+
 class URL(BaseModel):
     url: str
 
+
 class RawDocument(BaseModel):
-    source_service: str
-    source_url: str
+    service: str
+    url: str
     name: str
-    body: str
+    text: str
 
-
-class RagQuery(BaseModel):
-    query_texts: List[str]
-    n_results: int
-    where: Union[dict[str, str], None]
-    where_document: Union[dict[str, str], None]
-    
 
 class LLMQuery(BaseModel):
     tosdr_cases: List[str]
-    
+    service: Union[str, None]
+    doc_name: Union[str, None]
 
-# # Load our model
-# llm = Llama(
-#     model_path="models\mistral-7b-instruct-v0.1.Q5_K_M.gguf",
-#     n_gpu_layers=6,
-#     n_ctx=2048,
-#     n_batch=512
-# )
+
 app = FastAPI()
 storage = VectorStore()
 
@@ -52,9 +42,10 @@ async def add_raw_document(raw_doc: RawDocument):
     Adds a raw document to vector storage
     """
     storage.load_from_text(
-        raw_doc.body,
+        raw_doc.service,
+        raw_doc.url,
         raw_doc.name,
-        raw_doc.source_service
+        raw_doc.text
     )
     return {"message": "Added document to vector storage"}
 
@@ -68,24 +59,21 @@ async def add_raw_document_from_url(url: URL):
     return {"message": "Success!"}
 
 
-@app.post("/rag_query", status_code=200)
-async def make_rag_query(query: RagQuery):
-    results = storage.query(
-        query_texts=query.query_texts,
-        n_results=query.n_results,
-        where=query.where,
-        where_document=query.where_document
-    )
-    return results
-
-
 @app.post("/query", status_code=200)
 async def make_query(query: LLMQuery):
     # For each case, search the vector database for results
+    # Filter by service name
     query_response = await asyncio.to_thread(
         storage.query,
         query_texts=query.tosdr_cases,
-        n_results=4
+        # Only get documents that belong to the queried service
+        # since we will have lots of different documents from diff services
+        where={
+            "service": query.service
+        },
+        n_results=4,
+        # Return document metadata as well
+        include=["documents", "metadatas"]
     )
     llm_response = {
         "results": []
@@ -136,11 +124,15 @@ async def make_query(query: LLMQuery):
                 source_text = search_results[choice-1] if choice != 0 else ""
                 result["source_text"] = source_text
                 result["tosdr_case"] = query.tosdr_cases[index]
+                # Get the metadata associated with the selected source document
             except json.JSONDecodeError as e:
                 print(f"Error decoding the model response: {e}")
                 result = {}
+            result["source_doc"] = query_response["metadatas"][index][0]["name"]
+            result["source_url"] = query_response["metadatas"][index][0]["url"]
+            result["source_service"] = query_response["metadatas"][index][0]["service"]
             llm_response["results"].append(result)
         except Exception as e:
-            print(f"An error occurred while parsing the response from the remote server: {e}")
+            print(f"An error occurred while constructing the response: {e}")
     return llm_response
     

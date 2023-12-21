@@ -2,7 +2,7 @@ def chunk_raw_text_by_newline(text: str) -> tuple:
     """
     Chunks raw input text by newline 
     """
-    return text.split("\n"), {}
+    return text.split("\n")
 
 
 def extract_metadata_from_html(text: str) -> tuple:
