@@ -66,10 +66,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       },
       // body: JSON.stringify({ 'url': message.source })
       // Send test cases to backend server
-      body: JSON.stringify( { 'tosdr_cases': [
+      body: JSON.stringify( { 
+        'tosdr_cases': [
         'This service receives your precise location through GPS coordinates',
         'Deleted content is not really deleted'
-      ]})
+        ],
+        'service': 'Telegram'
+      })
     })
     .then(response => {
       return response.json();
