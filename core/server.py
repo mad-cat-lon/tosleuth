@@ -3,12 +3,15 @@ from rag import VectorStore
 from typing import Union, List
 from pydantic import BaseModel 
 # from llama_cpp import Llama
-from prompts import make_prompt
 import json
 import asyncio
 import requests
 import pprint
+from playwright.async_api import async_playwright
 
+from prompts import make_prompt
+from scraper import scrape_raw_document_from_url
+from utils.cleaning import remove_html_tags
 
 class URL(BaseModel):
     url: str
@@ -33,7 +36,7 @@ storage = VectorStore()
 
 @app.get("/")
 async def root():
-    return {"message": "Active!"}
+    return {"message": "Hello World!"}
 
 
 @app.post("/add", status_code=200)
@@ -41,14 +44,14 @@ async def add_raw_document(raw_doc: RawDocument):
     """
     Adds a raw document to vector storage
     """
+    clean_text = remove_html_tags(raw_doc.text)
     storage.load_from_text(
         raw_doc.service,
         raw_doc.url,
         raw_doc.name,
-        raw_doc.text
+        clean_text
     )
     return {"message": "Added document to vector storage"}
-
 
 @app.post("/add_from_url", status_code=200)
 async def add_raw_document_from_url(url: URL):
@@ -56,7 +59,16 @@ async def add_raw_document_from_url(url: URL):
     Gets a URL to a resource and retrieves the raw document
     """
     print(url.url)
-    return {"message": "Success!"}
+    async with async_playwright() as p:
+        browser = await p.firefox.launch(headless=True)
+        service, url, name, text = await scrape_raw_document_from_url(browser, url.url)
+        storage.load_from_text(
+            service,
+            url,
+            name,
+            text
+        )
+    return {"message": f"Scraped document from {url} and added to vector storage"}
 
 
 @app.post("/query", status_code=200)

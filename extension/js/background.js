@@ -54,7 +54,32 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     .catch(error => {
       console.log("Error in fetching: ", error);
     });
-  } 
+  }
+  if (message.action === 'sendContent') {
+    const url = 'http://127.0.0.1:8000/add'
+    // send the raw HTML to our backend server
+    fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        'service': message.service,
+        'url': message.url,
+        'name': message.name,
+        'text': message.text
+      })
+    })
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      console.log("Response from backend received: ", data);
+    })
+    .catch(error => {
+      console.log("Error in fetching: ", error);
+    });
+  }
   // TESTING CODE FOR SIDEBAR
   if (message.action === 'testSidebarResults') {
     const url = 'http://127.0.0.1:8000/query';
