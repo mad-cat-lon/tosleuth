@@ -1,1 +1,24 @@
 *__pycache__
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+extension/node_modules
+extension/.pnp
+extension.pnp.js
+
+# testing
+extension/coverage
+
+# production
+extension/build
+
+# misc
+extension/.DS_Store
+extension/.env.local
+extension/.env.development.local
+extension/.env.test.local
+extension/.env.production.local
+
+extension/npm-debug.log*
+extension/yarn-debug.log*
+extension/yarn-error.log*
