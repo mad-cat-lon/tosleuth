@@ -2,12 +2,11 @@ from fastapi import FastAPI, HTTPException
 from rag import VectorStore
 from typing import Union, List
 from pydantic import BaseModel 
-# from llama_cpp import Llama
 import json
 import asyncio
 import requests
 import pprint
-from playwright.async_api import async_playwright
+# from playwright.async_api import async_playwright
 
 from prompts import make_prompt
 from scraper import scrape_raw_document_from_url
@@ -59,16 +58,16 @@ async def add_raw_document_from_url(url: URL):
     Gets a URL to a resource and retrieves the raw document
     """
     print(url.url)
-    async with async_playwright() as p:
-        browser = await p.firefox.launch(headless=True)
-        service, url, name, text = await scrape_raw_document_from_url(browser, url.url)
-        storage.load_from_text(
-            service,
-            url,
-            name,
-            text
-        )
-    return {"message": f"Scraped document from {url} and added to vector storage"}
+    # async with async_playwright() as p:
+    #     browser = await p.firefox.launch(headless=True)
+    #     service, url, name, text = await scrape_raw_document_from_url(browser, url.url)
+    #     storage.load_from_text(
+    #         service,
+    #         url,
+    #         name,
+    #         text
+    #     )
+    # return {"message": f"Scraped document from {url} and added to vector storage"}
 
 
 @app.post("/query", status_code=200)
