@@ -5,12 +5,19 @@ from pydantic import BaseModel
 import json
 import asyncio
 import requests
+import chromadb
 import pprint
+import os
 # from playwright.async_api import async_playwright
 
-from prompts import make_prompt
-from scraper import scrape_raw_document_from_url
-from utils.cleaning import remove_html_tags
+from langchain.vectorstores import Chroma
+from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain.document_transformers import Html2TextTransformer
+from langchain.schema.document import Document
+from langchain.llms.fireworks import Fireworks
+from langchain.text_splitter import CharacterTextSplitter
+
+from prompts import RAGQueryPromptTemplate
 
 class URL(BaseModel):
     url: str
@@ -30,7 +37,34 @@ class LLMQuery(BaseModel):
 
 
 app = FastAPI()
-storage = VectorStore()
+# storage = VectorStore()
+
+print("Setting up vector store...")
+# Handling vector store
+# Initialize persistent client and collection 
+embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+client = chromadb.PersistentClient(path="vecdb")
+collection = client.get_or_create_collection("vecdb")
+db = Chroma(
+    client=client,
+    collection_name="vecdb",
+    embedding_function=embedding_function
+)
+
+print("Loaded vector store...")
+
+# Handling fireworks API
+# We can change the key later, just easier for dev
+if "FIREWORKS_API_KEY" not in os.environ:
+    os.environ["FIREWORKS_API_KEY"] = "0QX3IdsrikDEomAyxHtKVcW7WA5a4WfC5IlJkb0jbB79YiKB"
+llm = Fireworks(
+    model="accounts/fireworks/models/mistral-7b-instruct-4k",
+    model_kwargs={
+        "temperature": 0.1,
+        "max_tokens": 100,
+        "top_p": 1.0
+    }
+)
 
 
 @app.get("/")
@@ -43,20 +77,44 @@ async def add_raw_document(raw_doc: RawDocument):
     """
     Adds a raw document to vector storage
     """
-    clean_text = remove_html_tags(raw_doc.text)
-    storage.load_from_text(
-        raw_doc.service,
-        raw_doc.url,
-        raw_doc.name,
-        clean_text
+    # Create Langchain Document object from our request
+    doc = Document(
+        page_content=raw_doc.text,
+        metadata ={
+            "service": raw_doc.service,
+            "url": raw_doc.url,
+            "name": raw_doc.name
+        } 
     )
-    return {"message": "Added document to vector storage"}
+    # Remove the HTML
+    html2text = Html2TextTransformer()
+    cleaned_html = html2text.transform_documents([doc])[0]
+    # Just split by newlines for now 
+    splitter = CharacterTextSplitter(
+        separator = "\n",
+        chunk_size = 500,
+        chunk_overlap  = 200,
+        length_function = len,
+        is_separator_regex = False,
+    )
+
+    texts = splitter.split_documents([cleaned_html])
+    db.add_texts(
+        texts=[doc.page_content for doc in texts],  
+        metadatas=[doc.metadata for doc in texts]
+    )
+    return {"message": f"Successfully added document {raw_doc.name} from {raw_doc.service} to the vector store."}
+
+
+
 
 @app.post("/add_from_url", status_code=200)
 async def add_raw_document_from_url(url: URL):
     """
     Gets a URL to a resource and retrieves the raw document
     """
+    # TODO: Finish this later with langchain's built in loaders 
+    # https://python.langchain.com/docs/modules/data_connection/document_loaders/
     print(url.url)
     # async with async_playwright() as p:
     #     browser = await p.firefox.launch(headless=True)
@@ -72,78 +130,53 @@ async def add_raw_document_from_url(url: URL):
 
 @app.post("/query", status_code=200)
 async def make_query(query: LLMQuery):
-    # For each case, search the vector database for results
-    # Filter by service name
-    query_response = await asyncio.to_thread(
-        storage.query,
-        query_texts=query.tosdr_cases,
-        # Only get documents that belong to the queried service
-        # since we will have lots of different documents from diff services
-        where={
-            "service": query.service
-        },
-        n_results=4,
-        # Return document metadata as well
-        include=["documents", "metadatas"]
-    )
-    llm_response = {
+
+    extension_response = {
         "results": []
     }
-    print(query_response)
-    # Now we go through each of the results
-    # and insert the query text and results into the prompt
-    for index, search_results in enumerate(query_response["documents"]):
-        prompt = make_prompt(
-            query_statement=query.tosdr_cases[index],
-            vector_results=search_results
+
+    # For each case, search the vector database for results
+    for query_text in query.tosdr_cases:
+        query_response = await asyncio.to_thread(
+            db.similarity_search,
+            query=query_text,
+            k=4,
+            filter={"service": query.service},
+            include=["documents", "metadatas"]
         )
-        url = "https://api.fireworks.ai/inference/v1/chat/completions"
-
-        payload = {
-            "messages": [
-                { 
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "temperature": 0.1,
-            "top_p": 0.9,
-            "n": 1,
-            "frequency_penalty": 0,
-            "presence_penalty": 0,
-            "stream": False,
-            "max_tokens": 300,
-            "stop": None,
-            "prompt_truncate_len": 1500,
-            "model": "accounts/fireworks/models/mistral-7b-instruct-4k"
-        }
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "authorization": "Bearer 0QX3IdsrikDEomAyxHtKVcW7WA5a4WfC5IlJkb0jbB79YiKB"
-        }
-
-        response = requests.post(url, json=payload, headers=headers)
+        print(query_response)
+        # For each returned text from the vector store, insert into prompt,
+        # send to model and parse response
+        template = RAGQueryPromptTemplate(
+            input_variables=["query", "result1", "result2", "result4"]
+        )
+        prompt = template.format(
+            query=query_text,
+            results=[doc.page_content for doc in query_response]
+        )
+        # print(prompt)
+        llm_response = llm(prompt)
+        print(llm_response)
+        result = {}
         try:
-            response = json.loads(response.text)
-            pprint.pprint(response)
-            try:
-                result = json.loads(response["choices"][0]["message"]["content"])
-                # Extract which choice was returned so we can get the original text
-                choice = result["choice"]
-                print(search_results)
-                source_text = search_results[choice-1] if choice != 0 else ""
-                result["source_text"] = source_text
-                result["tosdr_case"] = query.tosdr_cases[index]
-                # Get the metadata associated with the selected source document
-                result["source_doc"] = query_response["metadatas"][index][0]["name"]
-                result["source_url"] = query_response["metadatas"][index][0]["url"]
-                result["source_service"] = query_response["metadatas"][index][0]["service"]
-            except json.JSONDecodeError as e:
-                print(f"Error decoding the model response: {e}")
-                result = {}
-            llm_response["results"].append(result)
-        except Exception as e:
-            print(f"An error occurred while constructing the response: {e}")
-    return llm_response
-    
+            response = json.loads(llm_response)
+            # Extract the choice
+            choice = response["choice"]
+            chosen_doc = query_response[choice-1]
+            source_text = chosen_doc if choice != 0 else ""
+            # TODO: Fix field duplication later
+            result["source_text"] = source_text.page_content
+            result["tosdr_case"] = query_text
+            result["source_doc"] = chosen_doc.metadata["name"]
+            result["source_url"] = chosen_doc.metadata["url"]
+            result["source_service"] = chosen_doc.metadata["service"]
+            if source_text:
+                result["found"] = True
+            else:
+                result["found"] = False
+        except json.JSONDecodeError:
+            print(f"Error decoding response from model")
+            result["found"] = False
+        extension_response["results"].append(result)
+    return extension_response
+           

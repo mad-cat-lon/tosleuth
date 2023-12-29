@@ -1,6 +1,8 @@
-def make_prompt(query_statement, vector_results=[]):
-    prompt = f"""
-<s>[INST] 
+from langchain.prompts import StringPromptTemplate
+from pydantic import BaseModel, validator
+
+PROMPT = """
+<s>[INST] <<SYS>>
 You are a helpful AI assistant who analyzes legal clauses in a website's terms of service and privacy agreements. Given a legal statement and 4 pieces of text extracted from the document, pick the one that answers the statement best and choose the number. Some of the statements may not directly answer the statement or be relevant. If no texts are satisfactory, choose 0. Output a valid JSON object containing the choice of text and your reasoning, but keep it concise. DO NOT OUTPUT ANYTHING OTHER THAN THE JSON OBJECT. YOU MUST ONLY OUTPUT JSON OR YOU WILL BE PUNISHED.
 Here are a few examples.
 
@@ -24,16 +26,34 @@ Content, you may expose yourself to liability if you post or share Content witho
 
 <</SYS>>
 
-Given the statement "{query_statement}", which of the following texts, if any, answer it? Think carefully. 
+Given the statement "{query}", which of the following texts, if any, answer it? Think carefully. 
 
-1) {vector_results[0]}
+1) {result1}
 
-2) {vector_results[1]}
+2) {result2}
 
-3) {vector_results[2]}
+3) {result3}
 
-4) {vector_results[3]}
+4) {result4}
 [/INST]
     
 """
-    return prompt
+
+n_results = 4
+
+class RAGQueryPromptTemplate(StringPromptTemplate, BaseModel):
+    """
+    Custom prompt template that takes in the query (a TOSDR case like "This service can read your messages")
+    and formats the prompt template to provide the query and the 4 texts returned from the vector store
+    """
+    
+    def format(self, **kwargs) -> str:
+        prompt = PROMPT.format(
+            query=kwargs["query"],
+            result1=kwargs["results"][0],
+            result2=kwargs["results"][1],
+            result3=kwargs["results"][2],
+            result4=kwargs["results"][3],
+        )
+        return prompt
+    
