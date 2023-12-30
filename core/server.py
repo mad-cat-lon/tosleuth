@@ -148,7 +148,7 @@ async def make_query(query: LLMQuery):
         # For each returned text from the vector store, insert into prompt,
         # send to model and parse response
         template = RAGQueryPromptTemplate(
-            input_variables=["query", "result1", "result2", "result4"]
+            input_variables=["query", "result1", "result2", "result3", "result4"]
         )
         prompt = template.format(
             query=query_text,
