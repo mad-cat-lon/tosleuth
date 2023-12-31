@@ -57,12 +57,13 @@ class VectorStore:
         logging.info(f"Added {len(documents)} to the collection.")
 
     def load_from_text(self, service, url, name, text):
+        print(f"Adding document {name} from service {service} to vectorDB...")
         logging.info(f"Reading text {name} from {service}")
         # Add name and source_service to metadata later 
         chunks = utils.chunk_raw_text_by_newline(text)
         metadatas = [{"name": name, "service": service, "url": url} for _ in chunks]
         self.add_to_collection(chunks, metadatas)
-        print(f"Added document {name} from service {service} to vectorDB")
+        print(f"Succesfully added document {name} from service {service} to vectorDB")
 
     def load_from_file(self, file_path: str, file_name):
         with open(file_path, "r", encoding="utf-8") as f:
