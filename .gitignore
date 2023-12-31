@@ -22,3 +22,5 @@ extension/.env.production.local
 extension/npm-debug.log*
 extension/yarn-debug.log*
 extension/yarn-error.log*
+extension/node_modules/
+extension/build/
