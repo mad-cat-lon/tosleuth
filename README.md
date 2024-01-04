@@ -2,19 +2,15 @@
 
 ## Setting up 
 ### Set up backend server
-1. Install [pyenv](https://blog.teclado.com/how-to-use-pyenv-manage-python-versions/) by following this guide. Pyenv lets us isolate different versions of Python/packages for each project. Make sure to install version 3.9.13
+1. Install [Python](https://www.python.org/downloads/release/python-3115/) here 
 2. Do `git clone https://github.com/mad-cat-lon/tosleuth` and do `cd tosleuth`
-3. Do `pyenv shell 3.9.13`
-4. Do `cd core`
-5. Do `pip install -r requirements.txt` and follow the installation steps 
+3. Do `cd core`
+4. Do `pip install -r requirements.txt` and follow the installation steps 
+
 ### Set up extension
 1. `cd extension`
 2. `npm install`
 3. When you want to generate a production build for testing in Firefox, do `npm run build`
-
-## Playing around with the vector DB
-Run `testing.py` to see how embeddings are retrieved! This code initializes our vector store and allows us to query it interactively. Enter some text and see what snippets of text are returned - play around with the different parameters in `rag.py`, along with the chunking in `utils/chunking.py` to see how it affects the search results
-
 
 ## Running the Firefox extension 
 Go to `about:debugging#/runtime/this-firefox`
