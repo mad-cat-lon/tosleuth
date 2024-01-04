@@ -12,9 +12,6 @@
 2. `npm install`
 3. When you want to generate a production build for testing in Firefox, do `npm run build`
 
-## Playing around with the vector DB
-Run `testing.py` to see how embeddings are retrieved! This code initializes our vector store and allows us to query it interactively. Enter some text and see what snippets of text are returned - play around with the different parameters in `rag.py`, along with the chunking in `utils/chunking.py` to see how it affects the search results
-
 
 ## Running the Firefox extension 
 Go to `about:debugging#/runtime/this-firefox`
