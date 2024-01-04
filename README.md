@@ -2,11 +2,11 @@
 
 ## Setting up 
 ### Set up backend server
-1. Install [pyenv](https://blog.teclado.com/how-to-use-pyenv-manage-python-versions/) by following this guide. Pyenv lets us isolate different versions of Python/packages for each project. Make sure to install version 3.9.13
+1. Install [Python](https://www.python.org/downloads/release/python-3115/)
 2. Do `git clone https://github.com/mad-cat-lon/tosleuth` and do `cd tosleuth`
-3. Do `pyenv shell 3.9.13`
-4. Do `cd core`
-5. Do `pip install -r requirements.txt` and follow the installation steps 
+3. Do `cd core`
+4. Do `pip install -r requirements.txt` and follow the installation steps 
+
 ### Set up extension
 1. `cd extension`
 2. `npm install`
