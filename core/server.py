@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-from rag import VectorStore
 from typing import Union, List
 from pydantic import BaseModel 
 import json
