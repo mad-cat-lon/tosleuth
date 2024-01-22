@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import { LinearProgress } from '@mui/material';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -26,9 +28,12 @@ function generate(element) {
 
 export default function AnalysisResults() {
     const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const handleMessage = (msg) => {
+        if (msg.action === 'loadingResults') {
+            setLoading(true);
+        }
         if (msg.action === 'updateResults') {
             setData(msg.data['results']);
             setLoading(false);
@@ -43,7 +48,11 @@ export default function AnalysisResults() {
         return () => browser.runtime.onMessage.removeListener(handleMessage);
     });
 
-    if (loading) return <p>Loading...</p>;
+    if (loading) return (
+      <Box sx={{ width: '100%' }}>
+        <LinearProgress />
+      </Box>
+    )
     if (error) return <p>Error loading data!</p>;
     
     return (
