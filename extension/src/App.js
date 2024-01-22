@@ -7,6 +7,7 @@ import TestButton from './components/TestButton';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import { Container, Paper, Box, Button } from '@mui/material';
+import ButtonGroup from '@mui/material/ButtonGroup';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
@@ -39,13 +40,13 @@ function App() {
               src={"padlock.png"} 
               sx={{ height: "100px", width: "100px" }} 
             />
-          <Stack
-            spacing={1}
-          >
+            <ButtonGroup
+              orientation="vertical"
+            >
             <TestButton/>
             <AutoAnalyzeButton/>
             <AnalyzeButton/>
-          </Stack>
+            </ButtonGroup>
           <AnalysisResults/>
           </Stack>
         </Container>
