@@ -153,7 +153,10 @@ async def make_query(query: LLMQuery):
             query=query_text,
             results=[doc.page_content for doc in query_response]
         )
-        # print(prompt)
+        print("="*40)
+        print(prompt)
+        print("="*40)
+
         llm_response = llm(prompt)
         print(llm_response)
         result = {}
@@ -162,13 +165,14 @@ async def make_query(query: LLMQuery):
             # Extract the choice
             choice = response["choice"]
             chosen_doc = query_response[choice-1]
-            source_text = chosen_doc if choice != 0 else ""
+            source_text = chosen_doc.page_content if choice != 0 else ""
             # TODO: Fix field duplication later
-            result["source_text"] = source_text.page_content
+            result["source_text"] = source_text
             result["tosdr_case"] = query_text
             result["source_doc"] = chosen_doc.metadata["name"]
             result["source_url"] = chosen_doc.metadata["url"]
             result["source_service"] = chosen_doc.metadata["service"]
+            result["reason"] = response["reason"]
             if source_text:
                 result["found"] = True
             else:
