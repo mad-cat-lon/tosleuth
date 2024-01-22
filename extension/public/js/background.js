@@ -85,10 +85,46 @@ browser.runtime.onMessage.addListener((msg) => {
     .catch(error => {
       console.log("Error in fetching: ", error);
     });
+    const query = 'http://127.0.0.1:8000/query';
+    // send it to our backend server
+    fetch(query, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      // body: JSON.stringify({ 'url': message.source })
+      // Send test cases to backend server
+      body: JSON.stringify( { 
+        'tosdr_cases': [
+        'Third-party cookies are used for advertising',
+        'This service can share your personal information to third parties',
+        'Tracking via third-party cookies for other purposes without your consent.'
+        ],
+        'service': msg.service
+      })
+    })
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      console.log("Response from backend received: ", data);
+      // Send message to sidebar view to render the results from backend
+      browser.runtime.sendMessage({
+        action: 'updateResults',
+        data: data,
+        source: msg.source
+      })
+    })
+    .catch(error => {
+      console.log("Error in fetching: ", error);
+    });
   }
   // TESTING CODE FOR SIDEBAR
   if (msg.action === 'testSidebarResults') {
     console.log('[!] testSidebarResults event received');
+    browser.runtime.sendMessage({
+      action: 'loadingR'
+    })
     const url = 'http://127.0.0.1:8000/query';
     // send it to our backend server
     fetch(url, {
@@ -100,8 +136,9 @@ browser.runtime.onMessage.addListener((msg) => {
       // Send test cases to backend server
       body: JSON.stringify( { 
         'tosdr_cases': [
-        'This service receives your precise location through GPS coordinates',
-        'Deleted content is not really deleted'
+        'Third-party cookies are used for advertising',
+        'This service can share your personal information to third parties',
+        'Tracking via third-party cookies for other purposes without your consent.'
         ],
         'service': 'Telegram'
       })
