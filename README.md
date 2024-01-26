@@ -12,6 +12,7 @@
 2. `npm install`
 3. When you want to generate a production build for testing in Firefox, do `npm run build`
 
+
 ## Running the Firefox extension 
 Go to `about:debugging#/runtime/this-firefox`
 Click "Load temporary addon"

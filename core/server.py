@@ -174,12 +174,13 @@ async def make_query(query: LLMQuery):
             result["source_service"] = chosen_doc.metadata["service"]
             result["reason"] = response["reason"]
             if source_text:
-                result["found"] = True
+                result["error"] = None
             else:
-                result["found"] = False
+                # Model chose 0 
+                result["error"] = 1
         except json.JSONDecodeError:
             print(f"Error decoding response from model")
-            result["found"] = False
+            result["error"] = 2
         extension_response["results"].append(result)
     return extension_response
            
