@@ -34,7 +34,6 @@ class LLMQuery(BaseModel):
     service: Union[str, None]
     doc_name: Union[str, None]
 
-
 app = FastAPI()
 # storage = VectorStore()
 
@@ -57,11 +56,35 @@ print("Loaded vector store...")
 if "FIREWORKS_API_KEY" not in os.environ:
     os.environ["FIREWORKS_API_KEY"] = "0QX3IdsrikDEomAyxHtKVcW7WA5a4WfC5IlJkb0jbB79YiKB"
 llm = Fireworks(
-    model="accounts/fireworks/models/mistral-7b-instruct-4k",
+    model="accounts/fireworks/models/zephyr-7b-beta",
     model_kwargs={
         "temperature": 0.1,
         "max_tokens": 100,
-        "top_p": 1.0
+        "top_p": 1.0,
+        "response_format": {
+            "type": "json_object",
+            "schema": """{
+                "type": "object",
+                "properties": {
+                "choice": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "answer": {
+                    "type": "boolean"
+                }
+                },
+                "required": [
+                    "choice",
+                    "reason",
+                    "answer"
+                ]
+            }"""
+        }
     }
 )
 
@@ -76,6 +99,7 @@ async def add_raw_document(raw_doc: RawDocument):
     """
     Adds a raw document to vector storage
     """
+    print(f"Adding {raw_doc.name} from {raw_doc.service}")
     # Create Langchain Document object from our request
     doc = Document(
         page_content=raw_doc.text,
@@ -98,6 +122,7 @@ async def add_raw_document(raw_doc: RawDocument):
     )
 
     texts = splitter.split_documents([cleaned_html])
+    texts = [doc for doc in texts if len(doc.page_content) > 0]
     db.add_texts(
         texts=[doc.page_content for doc in texts],  
         metadatas=[doc.metadata for doc in texts]
@@ -136,6 +161,7 @@ async def make_query(query: LLMQuery):
 
     # For each case, search the vector database for results
     for query_text in query.tosdr_cases:
+        result = {}
         query_response = await asyncio.to_thread(
             db.similarity_search,
             query=query_text,
@@ -144,6 +170,10 @@ async def make_query(query: LLMQuery):
             include=["documents", "metadatas"]
         )
         print(query_response)
+        if len(query_response) < 4:
+            result["error"] = 0
+            extension_response["results"].append(result)            
+            continue
         # For each returned text from the vector store, insert into prompt,
         # send to model and parse response
         template = RAGQueryPromptTemplate(
@@ -159,7 +189,6 @@ async def make_query(query: LLMQuery):
 
         llm_response = llm(prompt)
         print(llm_response)
-        result = {}
         try:
             response = json.loads(llm_response)
             # Extract the choice
@@ -173,6 +202,7 @@ async def make_query(query: LLMQuery):
             result["source_url"] = chosen_doc.metadata["url"]
             result["source_service"] = chosen_doc.metadata["service"]
             result["reason"] = response["reason"]
+            result["answer"] = response["answer"]
             if source_text:
                 result["error"] = None
             else:
