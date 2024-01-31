@@ -15,6 +15,7 @@ from langchain.document_transformers import Html2TextTransformer
 from langchain.schema.document import Document
 from langchain.llms.fireworks import Fireworks
 from langchain.text_splitter import CharacterTextSplitter
+from fastapi.middleware.cors import CORSMiddleware
 
 from prompts import RAGQueryPromptTemplate
 
@@ -36,6 +37,17 @@ class LLMQuery(BaseModel):
 
 app = FastAPI()
 # storage = VectorStore()
+
+origins = ["*"]
+
+# CORS Protection
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 print("Setting up vector store...")
 # Handling vector store
@@ -212,5 +224,6 @@ async def make_query(query: LLMQuery):
             print(f"Error decoding response from model")
             result["error"] = 2
         extension_response["results"].append(result)
+        print("FASTAPI RESPONSE\n"+extension_response)
     return extension_response
            
