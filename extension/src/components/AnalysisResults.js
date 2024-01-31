@@ -58,54 +58,48 @@ export default function AnalysisResults() {
     return (
         <div>
           {data.map((item, index) => (
-            <Accordion key={index}>
-              <AccordionSummary 
-              expandIcon={<ExpandMoreIcon/>}>
-                {/* Should render icons based on point severity*/}
-                <PersonSearchIcon style={{ marginRight: 8 }}/>
-                <Typography>{item.tosdr_case}</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <List dense="true">
-                  {/* <ListItem>
-                    <ListItemIcon>
-                      <HelpIcon/>
-                    </ListItemIcon>
-                    <Container>
-                      <Typography variant="h4" gutterBottom>
-                        Point explanation
-                      </Typography>
-                    </Container>
-                  </ListItem> */}
-                  <ListItem>
-                    <ListItemIcon>
-                      <DocumentScannerIcon/>
-                    </ListItemIcon>
-                    <Container>
-                      <Typography variant="h5" gutterBottom>
-                        Source in document
-                      </Typography>
-                      <Typography>
-                        "{item.source_text}"
-                      </Typography>
-                    </Container>
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <ScreenSearchDesktopIcon/>
-                    </ListItemIcon>
-                    <Container>
-                      <Typography variant="h5" gutterBottom>
-                        Generated reasoning
-                      </Typography>
-                      <Typography>
-                        {item.reason}
-                      </Typography>
-                    </Container>
-                  </ListItem>
-              </List>
-              </AccordionDetails>
-            </Accordion>
+            <>
+              {item.answer && (
+                <Accordion key={index}>
+                  <AccordionSummary 
+                  expandIcon={<ExpandMoreIcon/>}>
+                    {/* Should render icons based on point severity*/}
+                    <PersonSearchIcon style={{ marginRight: 8 }}/>
+                    <Typography>{item.tosdr_case}</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <List dense="true">
+                      <ListItem>
+                        <ListItemIcon>
+                          <DocumentScannerIcon/>
+                        </ListItemIcon>
+                        <Container>
+                          <Typography variant="h5" gutterBottom>
+                            Source in document
+                          </Typography>
+                          <Typography>
+                            "{item.source_text}"
+                          </Typography>
+                        </Container>
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon>
+                          <ScreenSearchDesktopIcon/>
+                        </ListItemIcon>
+                        <Container>
+                          <Typography variant="h5" gutterBottom>
+                            Generated reasoning
+                          </Typography>
+                          <Typography>
+                            {item.reason}
+                          </Typography>
+                        </Container>
+                      </ListItem>
+                  </List>
+                  </AccordionDetails>
+                </Accordion>
+              )}
+            </>
           ))}
         </div>
     );
