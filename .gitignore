@@ -1,4 +1,5 @@
 *__pycache__
+.venv/
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -22,3 +23,6 @@ extension/.env.production.local
 extension/npm-debug.log*
 extension/yarn-debug.log*
 extension/yarn-error.log*
+
+# db
+core/vecdb/
