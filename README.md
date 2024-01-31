@@ -16,7 +16,7 @@
 ## Running the Firefox extension 
 Go to `about:debugging#/runtime/this-firefox`
 Click "Load temporary addon"
-Navigate to the extension folder (under `/extensions`)
+Navigate to the extension build folder (under `/extensions/build`)
 Click `manifest.json`
 The extension should be loaded until the browser is restarted
 
