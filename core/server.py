@@ -224,6 +224,5 @@ async def make_query(query: LLMQuery):
             print(f"Error decoding response from model")
             result["error"] = 2
         extension_response["results"].append(result)
-        print("FASTAPI RESPONSE\n"+extension_response)
     return extension_response
            
