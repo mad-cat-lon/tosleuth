@@ -5,9 +5,10 @@
 1. Install Docker from [this link](https://www.docker.com/products/docker-desktop/)
 2. Open a terminal and do `git clone https://github.com/mad-cat-lon/tosleuth`
 3. `cd tosleuth`
-4. `docker compose up` to start the server, CTRL+C to stop the running server
-5. If you have made changes and want to see them in the running server, do `docker compose up --build`
-6. To stop the container run `docker compose down`
+4. `docker compose build` to build the server image
+5. `docker compose up` to start the server, CTRL+C to stop the running server
+6. If you have made changes and want to see them in the running server, do `docker compose up --build`
+7. To stop the container run `docker compose down`
 
 ### Set up extension
 1. `cd extension`
