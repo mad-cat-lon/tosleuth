@@ -2,7 +2,7 @@ function sendHTML() {
     let html = document.documentElement.innerHTML;
     let url = window.location.href;
     let name = document.getElementsByTagName('title')[0].innerText;
-    let service = (new URL(url)).hostname.replace('www', '');
+    let service = (new URL(url)).hostname.replace('www.', '');
     browser.runtime.sendMessage({
         action: 'sendContent',
         service: service,
