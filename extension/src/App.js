@@ -1,11 +1,61 @@
 import browser from 'webextension-polyfill';
 import { useState, useEffect } from 'react';
 
+import QueryCategorySelectionModal from './components/QuerySelection';
+
 function App() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState([]);
   const [theme, setTheme] = useState('light');
+
+  // Stores tosdr points by category so they can be selected in the menu
+  const queries = [
+    {
+      'name': '📒 Account policies',
+      'cases': [
+        'This service can delete your account without prior notice and without a reason',
+        'You must provide your legal name, pseudonyms are not allowed',
+        'User accounts can be terminated after having been in breach of the terms of service repeatedly'
+      ],
+      'checked': true
+    },
+    {
+      'name': '👁️ Tracking and data collection',
+      'cases': [
+        'This service tracks you on other websites',
+        'This service may collect, use, and share location data',
+        'Third party cookies are used for advertising',
+        'Tracking via third-party cookies for other purposes without your consent',
+        'The service may use tracking pixels, web beacons, browser fingerprinting, and/or device fingerprinting on users',
+        'This service receives your precise location through GPS coordinates',
+        'Your biometric data is collected'
+      ],
+      'checked': false
+    },
+    {
+      'name': '📁 Data storage and retention',
+      'cases': [
+        'This service stores your data whether you have an account or not',
+        'This service stores data on you even if you did not interact with the service',
+        'The service can sell or otherwise transfer your personal data as part of a bankruptcy proceeding or other type of financial transaction.',
+        'This service may keep personal data after a request for erasure for business interests or legal obligations'
+      ],
+      'checked': false
+    },
+    {
+      'name': '⚖️ Legal rights',
+      'cases': [
+        'You waive your moral rights',
+        'This service retains rights to your content even after you stop using your account',
+        'You waive your right to a class action.',
+        'You have the right to leave this service at any time',
+        'You agree to defend, indemnify, and hold the service harmless in case of a claim related to your use of the service',
+        'This service forces users into binding arbitration in the case of disputes'
+      ],
+      'checked': false
+    }
+  ]
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
@@ -55,6 +105,8 @@ function App() {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
           </label>
             {isLoading && <span className="loading loading-bars loading-lg text-success"></span>}
+            <button className="btn btn-lg btn-wide btn-outline w-full" onClick={()=>document.getElementById("query_selection_modal").showModal()}>✏️ Select analysis categories</button>
+            <QueryCategorySelectionModal queries={queries}/>
             <button className="btn btn-lg btn-primary btn-wide btn-active w-full" onClick={handleAnalyze}> 👁️ Analyze current page</button>
             <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAutoAnalyze}>🔍 Auto-discover and analyze</button>
             <button className="btn btn-lg btn-accent btn-wide btn-active w-full" onClick={clearData}>🗑️ Clear results</button>

@@ -26,6 +26,8 @@ browser.runtime.onInstalled.addListener(() => {
     console.log("Extension initialized.")
 })
 
+let tosdr_cases = [];
+
 browser.runtime.onMessage.addListener((msg) => {
   console.log(msg);
   // Events from sidebar
@@ -37,6 +39,11 @@ browser.runtime.onMessage.addListener((msg) => {
   if (msg.action === 'standardAnalyze') {
     console.log('[!] standardAnalyze event received')
     injectGetContent();
+  }
+
+  if (msg.action === 'addQueries') {
+    console.log('[!] addQueries event received');
+    tosdr_cases = msg.data;
   }
 
   if (msg.action === 'retrieveContent') {
@@ -95,11 +102,7 @@ browser.runtime.onMessage.addListener((msg) => {
       // body: JSON.stringify({ 'url': message.source })
       // Send test cases to backend server
       body: JSON.stringify( { 
-        'tosdr_cases': [
-        'Third-party cookies are used for advertising',
-        'This service can share your personal information to third parties',
-        'Tracking via third-party cookies for other purposes without your consent.'
-        ],
+        'tosdr_cases': tosdr_cases,
         'service': msg.service
       })
     })
