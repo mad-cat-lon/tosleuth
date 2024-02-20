@@ -12,25 +12,36 @@ function App() {
   // Stores tosdr points by category so they can be selected in the menu
   const queries = [
     {
-      'name': '🍪 Cookie policies',
-      'cases': [
-        'Third party cookies are used for advertising',
-        'Tracking via third-party cookies for other purposes without your consent',
-      ]
-    },
-    {
       'name': '📒 Account policies',
       'cases': [
-        'This service can delete your account without prior notice and without a reason'
-      ]
+        'This service can delete your account without prior notice and without a reason',
+        'You must provide your legal name, pseudonyms are not allowed',
+        'User accounts can be terminated after having been in breach of the terms of service repeatedly'
+      ],
+      'checked': true
     },
     {
       'name': '👁️ Tracking and data collection',
       'cases': [
         'This service tracks you on other websites',
+        'This service may collect, use, and share location data',
+        'Third party cookies are used for advertising',
+        'Tracking via third-party cookies for other purposes without your consent',
+        'The service may use tracking pixels, web beacons, browser fingerprinting, and/or device fingerprinting on users',
+        'This service receives your precise location through GPS coordinates',
+        'Your biometric data is collected'
+      ],
+      'checked': false
+    },
+    {
+      'name': '📁 Data storage and retention',
+      'cases': [
         'This service stores your data whether you have an account or not',
-        'This service stores data on you even if you did not interact with the service'
-      ]
+        'This service stores data on you even if you did not interact with the service',
+        'The service can sell or otherwise transfer your personal data as part of a bankruptcy proceeding or other type of financial transaction.',
+        'This service may keep personal data after a request for erasure for business interests or legal obligations'
+      ],
+      'checked': false
     },
     {
       'name': '⚖️ Legal rights',
@@ -38,8 +49,11 @@ function App() {
         'You waive your moral rights',
         'This service retains rights to your content even after you stop using your account',
         'You waive your right to a class action.',
-        'You have the right to leave this service at any time'
-      ]
+        'You have the right to leave this service at any time',
+        'You agree to defend, indemnify, and hold the service harmless in case of a claim related to your use of the service',
+        'This service forces users into binding arbitration in the case of disputes'
+      ],
+      'checked': false
     }
   ]
 
