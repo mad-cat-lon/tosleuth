@@ -22,11 +22,25 @@ function injectGetContent() {
     });
 }
 
+// function chunkArray(array, chunkSize) {
+//   return array.reduce((result, item, index) => {
+//     const chunkIndex = Math.floor(index / chunkSize);
+//     if (!result[chunkIndex]) {
+//       result[chunkIndex] = [];
+//     }
+//     result[chunkIndex].push(item);
+//     return result;
+//   }, []);
+// }
+
 browser.runtime.onInstalled.addListener(() => {
     console.log("Extension initialized.")
 })
 
 let tosdr_cases = [];
+const query_endpoint = 'http://127.0.0.1:8000/query';
+const url_upload_endpoint = 'http://127.0.0.1:8000/add_from_url';
+const content_upload_endpoint = 'http://127.0.0.1:8000/add'
 
 browser.runtime.onMessage.addListener((msg) => {
   console.log(msg);
@@ -38,7 +52,12 @@ browser.runtime.onMessage.addListener((msg) => {
 
   if (msg.action === 'standardAnalyze') {
     console.log('[!] standardAnalyze event received')
-    injectGetContent();
+    injectGetContent(true);
+  }
+
+  if (msg.action === 'addContent') {
+    console.log('[!] addContent event received');
+    injectGetContent(false);
   }
 
   if (msg.action === 'addQueries') {
@@ -48,9 +67,8 @@ browser.runtime.onMessage.addListener((msg) => {
 
   if (msg.action === 'retrieveContent') {
     console.log('[!] retrieveContent event received');
-    const url = 'http://127.0.0.1:8000/add_from_url';
     // send it to our backend server
-    fetch(url, {
+    fetch(url_upload_endpoint, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -67,11 +85,12 @@ browser.runtime.onMessage.addListener((msg) => {
       console.log("Error in fetching: ", error);
     });
   }
+
   if (msg.action === 'sendContent') {
     console.log('[!] sendContent event received');
-    const url = 'http://127.0.0.1:8000/add'
+    let start = Date.now();
     // send the raw HTML to our backend server
-    fetch(url, {
+    fetch(content_upload_endpoint, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -87,21 +106,68 @@ browser.runtime.onMessage.addListener((msg) => {
       return response.json();
     })
     .then(data => {
+      browser.runtime.sendMessage({
+        action: 'backendResponse',
+        type: 'upload',
+        error: false,
+        name: msg.name,
+        service: msg.service,
+        url: msg.url,
+      })
       console.log("Response from backend received: ", data);
     })
     .catch(error => {
+      browser.runtime.sendMessage({
+        action: 'backendResponse',
+        type: 'upload',
+        error: true,
+        name: msg.name,
+        service: msg.service,
+        url: msg.url
+      })
       console.log("Error in fetching: ", error);
     });
-    const query = 'http://127.0.0.1:8000/query';
-    // send it to our backend server
-    fetch(query, {
+    // We can either add a page, or add a page and immediately query it
+    if (msg.query_after === true) {
+      // Send queries to backend server immediately after adding file
+      fetch(query_endpoint, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          'tosdr_cases': tosdr_cases,
+          'service': msg.service
+        })
+      })
+      .then(response => {
+        return response.json();
+      })
+      .then(data => {
+        console.log("Response from backend received: ", data);
+        let timeTaken = Date.now() - start;
+        console.log("Total time taken : " + timeTaken + " milliseconds");
+        browser.runtime.sendMessage({
+          action: 'updateResults',
+          data: data,
+          source: msg.source
+        })
+      })
+      .catch(error => {
+        console.log("Error in fetching: ", error);
+      });
+    }
+  }
+
+  // Send queries to docs already stored in backend
+  if (msg.action === 'analyzeStoredContent') {
+    console.log('[!] analyzeStoredContent event received');
+    fetch(query_endpoint, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
       },
-      // body: JSON.stringify({ 'url': message.source })
-      // Send test cases to backend server
-      body: JSON.stringify( { 
+      body: JSON.stringify({
         'tosdr_cases': tosdr_cases,
         'service': msg.service
       })
@@ -111,7 +177,6 @@ browser.runtime.onMessage.addListener((msg) => {
     })
     .then(data => {
       console.log("Response from backend received: ", data);
-      // Send message to sidebar view to render the results from backend
       browser.runtime.sendMessage({
         action: 'updateResults',
         data: data,
@@ -122,4 +187,45 @@ browser.runtime.onMessage.addListener((msg) => {
       console.log("Error in fetching: ", error);
     });
   }
+    // send query cases to backend server
+    // Chunk queries so we aren't stuck waiting for all of them to process
+    // const chunkSize = 3;
+    // chunked_cases = chunkArray(tosdr_cases, chunkSize);
+    // const fetchQueryPromises = chunked_cases.map(
+    //   chunk => {
+    //     return fetch(query_endpoint, {
+    //       method: 'POST',
+    //       headers: { 
+    //         'Content-Type': 'application/json'
+    //       },
+    //       body: JSON.stringify( { 
+    //         'tosdr_cases': tosdr_cases,
+    //         'service': msg.service
+    //       })
+    //     })
+    //     .then(response => response.json())
+    //     .catch(error => console.log("Error in fetching: ", error));
+    //   }
+    // );
+    // // Use Promise.all to wait for all fetch requests to complete
+    // Promise.all(fetchQueryPromises)
+    // .then(results => {
+    //   // All fetch requests have completed successfully
+    //   console.log("All responses from backend received: ", results);
+    //   let timeTaken = Date.now() - start;
+    //   console.log("Total time taken : " + timeTaken + " milliseconds");
+    //   // Here, results is an array of responses from each fetch call
+    //   // You can process these results further as needed
+      
+    //   // For example, sending a message to sidebar view to render the results
+    //   browser.runtime.sendMessage({
+    //     action: 'updateResults',
+    //     data: results.flat(), // Flatten the array if needed or process as is
+    //     source: msg.source
+    //   });
+    // })
+    // .catch(error => {
+    //   // If any of the promises fails
+    //   console.log("Error in Promise.all: ", error);
+    // });
 })

@@ -2,11 +2,15 @@ import browser from 'webextension-polyfill';
 import { useState, useEffect } from 'react';
 
 import QueryCategorySelectionModal from './components/QuerySelection';
+// import ServiceSelectionDropdown from './components/ServiceSelection';
 
 function App() {
 
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState([]);
+  const [response, setResponse] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [services, setServices] = useState({});
+  const [results, setResults] = useState([]);
   const [theme, setTheme] = useState('light');
 
   // Stores tosdr points by category so they can be selected in the menu
@@ -29,7 +33,8 @@ function App() {
         'Tracking via third-party cookies for other purposes without your consent',
         'The service may use tracking pixels, web beacons, browser fingerprinting, and/or device fingerprinting on users',
         'This service receives your precise location through GPS coordinates',
-        'Your biometric data is collected'
+        'Your biometric data is collected',
+        'This service still tracks you even if you opted out from tracking'
       ],
       'checked': false
     },
@@ -66,21 +71,56 @@ function App() {
       setIsLoading(true);
     }
     if (msg.action === 'updateResults') {
-      setData(msg.data['results']);
+      setResults(msg.data['results']);
       setIsLoading(false);
     }
+    
+    // success and error handling
+    // TODO: this is really hacky
+    if (msg.action === 'backendResponse') {
+      setIsLoading(false);
+      setResponse(msg);
+      setShowToast(true);
+      if (msg.error === false && msg.type === 'upload') {
+        // if we successfully uploaded then add to the list of services and docs 
+        setServices(prevServices => {
+          // Check if service exists
+          if (prevServices.hasOwnProperty(msg.service)) {
+            return {
+              ...prevServices,
+              [msg.service]: [...prevServices[msg.service], msg.url]
+            };
+          }
+          else {
+            return {
+              ...prevServices,
+              [msg.service]: [msg.url]
+            };
+          }
+        });
+      }
+    }
   }
-
+  
   useEffect(() => {
     browser.runtime.onMessage.addListener(handleMessage);
-
     // Listen for changes to apply to HTML tag
     document.querySelector('html').setAttribute('data-theme', theme);
-
     // Cleanup listener when component unmounts
     return () => browser.runtime.onMessage.removeListener(handleMessage);
   })
   
+  // useEffect hook to automatically hide the toast
+  useEffect(() => {
+    let timer;
+    if (showToast) {
+      timer = setTimeout(() => {
+        setShowToast(false); // Hide the toast after 2 seconds
+      }, 2000); 
+    }
+    return () => clearTimeout(timer); // Cleanup the timer
+  }, [showToast]); // This effect depends on the showToast state
+
   async function handleAnalyze() {
     browser.runtime.sendMessage({ action: 'standardAnalyze' });
     setIsLoading(true);
@@ -90,14 +130,46 @@ function App() {
     browser.runtime.sendMessage({ action: 'autoAnalyze' });
     setIsLoading(true);
   }
+
+  async function handleStoreCurrentPage() {
+    browser.runtime.sendMessage({ action: 'addContent' });
+    setIsLoading(true);
+  }
   
+  async function handleAnalyzeStoredContent() {
+    // TODO: handle choices between multiple services later
+    // for now get the first one
+    let targetService = Object.keys(services)[0];
+    browser.runtime.sendMessage({
+      action: 'analyzeStoredContent',
+      service: targetService
+    })
+    setIsLoading(true);
+  }
+
   function clearData() {
-    setData([]);
+    setResults([]);
+    setServices({});
   }
 
   return (
     <div className="App">
       <div className="flex items-center min-h-screen justify-top pt-6 flex-col h-screen font-mono text-base-content">
+        {/* Simple Toast message containing backend success/error */}
+        {
+        showToast && response && 
+          (
+            <div 
+              role="alert" 
+              className={`alert fixed top-5 animate-slide-in-down p-2 max-w-lg z-50 ${response.error ? 'alert-error' : 'alert-success'}`}
+              onAnimationEnd={() => !showToast && setResponse(null)}
+            >
+              <span className="ml-3">
+                {response.error ? `Could not upload document "${response.name}"`: `Uploaded document "${response.name}"`}
+              </span>
+            </div>
+          )
+        }
         <div className="flex min-h-[50v] w-2/3 gap-4 flex-col items-center">
           <label className="flex cursor-pointer gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
@@ -105,18 +177,38 @@ function App() {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
           </label>
             {isLoading && <span className="loading loading-bars loading-lg text-success"></span>}
-            <button className="btn btn-lg btn-wide btn-outline w-full" onClick={()=>document.getElementById("query_selection_modal").showModal()}>✏️ Select analysis categories</button>
+            <button 
+              className="btn btn-lg btn-wide btn-outline w-full"
+              onClick={()=>document.getElementById("query_selection_modal").showModal()}
+              disabled={(Object.keys(services).length == 0)}
+            >
+              ✏️ Select analysis categories
+            </button>
             <QueryCategorySelectionModal queries={queries}/>
-            <button className="btn btn-lg btn-primary btn-wide btn-active w-full" onClick={handleAnalyze}> 👁️ Analyze current page</button>
-            <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAutoAnalyze}>🔍 Auto-discover and analyze</button>
-            <button className="btn btn-lg btn-accent btn-wide btn-active w-full" onClick={clearData}>🗑️ Clear results</button>
+            
+            <div className="flex-row gap-2 items-center w-full">
+              <button className="btn btn-lg btn-primary btn-wide btn-active w-1/2" onClick={handleStoreCurrentPage}>Store current document</button>
+              {/* <button className="btn btn-lg btn-primary btn-wide btn-active w-1/2" onClick={handleAnalyzeStoredContent}>Analyze stored documents</button> */}
+              <button
+                className="btn btn-lg btn-primary btn-wide btn-outline w-1/2"
+                disabled={(Object.keys(services).length == 0)}
+                onClick={handleAnalyzeStoredContent}
+              >
+                Analyze service
+              </button>
+            </div>
+            
+            <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAnalyze}> 👁️ Analyze current page</button>
+            {/* <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAutoAnalyze}>🔍 Auto-discover and analyze</button> */}
+            <button className="btn btn-lg btn-accent btn-wide btn-active w-full" onClick={clearData}>🗑️ Clear all data</button>
         </div>
         {
-          data.length > 0 && (
-            <div className="divider divider-warning"><span className="text-lg font-bold">Results for {data[0].source_service}</span></div>
+          results.length > 0 && (
+            <div className="divider divider-warning"><span className="text-lg font-bold">Results for {results[0].source_service}</span></div>
           )
         }
-          {data.map((item, index) => (
+        <div className="results-container min-h-[50v] overflow-auto">
+          {results.map((item, index) => (
             <>
             {
               item.answer && (
@@ -142,6 +234,7 @@ function App() {
             }
             </>
           ))}
+        </div>
       </div>
     </div>
   );

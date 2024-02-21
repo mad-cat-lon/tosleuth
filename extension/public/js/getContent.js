@@ -1,4 +1,4 @@
-function sendHTML() {
+function sendHTML(query_after) {
     let html = document.documentElement.innerHTML;
     let url = window.location.href;
     let name = document.getElementsByTagName('title')[0].innerText;
@@ -8,7 +8,8 @@ function sendHTML() {
         service: service,
         url: url,
         name: name,
-        text: html
+        text: html,
+        query_after: query_after
     })
 }
 sendHTML();
