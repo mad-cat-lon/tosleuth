@@ -115,7 +115,7 @@ function App() {
     document.querySelector('html').setAttribute('data-theme', theme);
     // Cleanup listener when component unmounts
     return () => browser.runtime.onMessage.removeListener(handleMessage);
-  }, []);
+  }, [theme]);
   
   // useEffect hook to automatically hide the toast
   useEffect(() => {
