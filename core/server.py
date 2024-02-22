@@ -7,14 +7,17 @@ import requests
 import chromadb
 import pprint
 import os
+# import markdownify
 # from playwright.async_api import async_playwright
+
+# from sentence_transformers import CrossEncoder
 
 from langchain.vectorstores import Chroma
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.document_transformers import Html2TextTransformer
 from langchain.schema.document import Document
 from langchain.llms.fireworks import Fireworks
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter, MarkdownTextSplitter
 from fastapi.middleware.cors import CORSMiddleware
 
 from prompts import RAGQueryPromptTemplate
@@ -23,7 +26,7 @@ class URL(BaseModel):
     url: str
 
 
-class RawDocument(BaseModel):
+class SourceDocument(BaseModel):
     service: str
     url: str
     name: str
@@ -60,18 +63,26 @@ db = Chroma(
     collection_name="vecdb",
     embedding_function=embedding_function
 )
-
+# reranker_model = CrossEncoder(model_name="BAAI/bge-reranker-large", max_length=512)
 print("Loaded vector store...")
 
 # Handling fireworks API
 # We can change the key later, just easier for dev
 if "FIREWORKS_API_KEY" not in os.environ:
     os.environ["FIREWORKS_API_KEY"] = "0QX3IdsrikDEomAyxHtKVcW7WA5a4WfC5IlJkb0jbB79YiKB"
+fireworks_models = {
+    # Smallest model, semi-functional
+    "zephyr-3b": "accounts/stability/models/stablelm-zephyr-3b",
+    # Decent functionality, poor accuracy
+    "zephyr-7b": "accounts/fireworks/models/zephyr-7b-beta",
+    # Expensive and capable Mixtral finetune
+    "firefunction": "accounts/fireworks/models/firefunction-v1"
+}
 llm = Fireworks(
-    model="accounts/fireworks/models/zephyr-7b-beta",
+    model=fireworks_models["firefunction"],
     model_kwargs={
         "temperature": 0.1,
-        "max_tokens": 100,
+        "max_tokens": 150,
         "top_p": 1.0,
         "response_format": {
             "type": "json_object",
@@ -84,6 +95,7 @@ llm = Fireworks(
                     "maximum": 4
                 },
                 "reason": {
+                    "maxLength": 500,
                     "type": "string"
                 },
                 "answer": {
@@ -100,6 +112,34 @@ llm = Fireworks(
     }
 )
 
+# def rerank_docs(query, retrieved_docs):
+#     query_and_docs = [(query, r.page_content) for r in retrieved_docs]
+#     scores = reranker_model.predict(query_and_docs)
+#     return sorted(list(zip(retrieved_docs, scores)), key=lambda x: x[1], reverse=True)
+
+
+# @app.post("/rag_query", status_code=200)
+# async def rag_query(query: LLMQuery):
+#     response = {
+#     }
+#     for query_text in query.tosdr_cases:
+#             result = {}
+#             query_response = await asyncio.to_thread(
+#                 db.similarity_search,
+#                 query=query_text,
+#                 k=10,
+#                 filter={"service": query.service},
+#                 include=["documents", "metadatas"]
+#             )
+#             # reranked = rerank_docs(query_text, query_response)
+#             # for doc in reranked:
+#             #     print(doc)
+#             response[query_text] = {
+#                 "vanilla": query_response,
+#                 # "reranked": rerank_docs(query_text, query_response)
+#             }
+            
+#     return response 
 
 @app.get("/")
 async def root():
@@ -107,45 +147,68 @@ async def root():
 
 
 @app.post("/add", status_code=200)
-async def add_raw_document(raw_doc: RawDocument):
+async def add_src_document(src_doc: SourceDocument):
     """
-    Adds a raw document to vector storage
+    Gets a SourceDocument object from user's POST request body
+    containing the raw HTML of the page, parses it, chunks it
+    and vectorizes it
     """
-    print(f"Adding {raw_doc.name} from {raw_doc.service}")
+    print(f"Adding {src_doc.name} from {src_doc.service}")
+    
+    # Check if source document already exists in our db
+    query_response = await asyncio.to_thread(
+        db.get,
+        where={"url": src_doc.url}
+    )
+    if query_response["documents"]:
+        return {"message": f"Document {src_doc.url} for service {src_doc.service} already exists in the database"}
+    
     # Create Langchain Document object from our request
-    doc = Document(
-        page_content=raw_doc.text,
+    original_doc = Document(
+        page_content=src_doc.text,
         metadata ={
-            "service": raw_doc.service,
-            "url": raw_doc.url,
-            "name": raw_doc.name
+            "service": src_doc.service,
+            "url": src_doc.url,
+            "name": src_doc.name
         } 
     )
-    # Remove the HTML
+    # Turn HTML of page into markdown
     html2text = Html2TextTransformer()
-    cleaned_html = html2text.transform_documents([doc])[0]
-    # Just split by newlines for now 
-    splitter = CharacterTextSplitter(
-        separator = "\n",
-        chunk_size = 500,
-        chunk_overlap  = 200,
-        length_function = len,
+    md_doc = html2text.transform_documents([original_doc])[0]
+    print("="*100)
+    print(md_doc.page_content)
+    print("="*100)
+
+    # Break down markdown text by header and include into metadata
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3")
+    ]
+    md_header_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on
+    )
+    split_by_headers = md_header_splitter.split_text(md_doc.page_content)
+    
+    # Go through each markdown chunk and recursively split
+    recursive_char_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=250,
+        length_function=len,
+        separators=["\n\n", "\n", ""],
         is_separator_regex = False,
     )
-
-    texts = splitter.split_documents([cleaned_html])
-    texts = [doc for doc in texts if len(doc.page_content) > 0]
+    final_chunks = recursive_char_splitter.split_documents(split_by_headers)
     db.add_texts(
-        texts=[doc.page_content for doc in texts],  
-        metadatas=[doc.metadata for doc in texts]
+        texts=[chunk.page_content for chunk in final_chunks],
+        # Add the original document metadata containing service, url and name
+        metadatas=[{**original_doc.metadata, **chunk.metadata} for chunk in final_chunks]
     )
-    return {"message": f"Successfully added document {raw_doc.name} from {raw_doc.service} to the vector store."}
-
-
+    return {"message": f"Successfully added document {src_doc.name} from {src_doc.service} to the vector store."}
 
 
 @app.post("/add_from_url", status_code=200)
-async def add_raw_document_from_url(url: URL):
+async def add_src_document_from_url(url: URL):
     """
     Gets a URL to a resource and retrieves the raw document
     """
@@ -163,10 +226,14 @@ async def add_raw_document_from_url(url: URL):
     #     )
     # return {"message": f"Scraped document from {url} and added to vector storage"}
 
-
+    
 @app.post("/query", status_code=200)
 async def make_query(query: LLMQuery):
-
+    """
+    Takes an LLMQuery object in user POST request body, searches the vector DB
+    with user-specified query strings, calls our inference API and returns
+    results
+    """
     extension_response = {
         "results": []
     }
@@ -195,9 +262,9 @@ async def make_query(query: LLMQuery):
             query=query_text,
             results=[doc.page_content for doc in query_response]
         )
-        print("="*40)
+        print("="*100)
         print(prompt)
-        print("="*40)
+        print("="*100)
 
         llm_response = llm(prompt)
         print(llm_response)
