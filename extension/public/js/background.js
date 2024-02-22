@@ -43,7 +43,6 @@ const url_upload_endpoint = 'http://127.0.0.1:8000/add_from_url';
 const content_upload_endpoint = 'http://127.0.0.1:8000/add'
 
 browser.runtime.onMessage.addListener((msg) => {
-  console.log(msg);
   // Events from sidebar
   if (msg.action === 'autoAnalyze') {
     console.log('[!] autoAnalyze event received');
@@ -187,45 +186,4 @@ browser.runtime.onMessage.addListener((msg) => {
       console.log("Error in fetching: ", error);
     });
   }
-    // send query cases to backend server
-    // Chunk queries so we aren't stuck waiting for all of them to process
-    // const chunkSize = 3;
-    // chunked_cases = chunkArray(tosdr_cases, chunkSize);
-    // const fetchQueryPromises = chunked_cases.map(
-    //   chunk => {
-    //     return fetch(query_endpoint, {
-    //       method: 'POST',
-    //       headers: { 
-    //         'Content-Type': 'application/json'
-    //       },
-    //       body: JSON.stringify( { 
-    //         'tosdr_cases': tosdr_cases,
-    //         'service': msg.service
-    //       })
-    //     })
-    //     .then(response => response.json())
-    //     .catch(error => console.log("Error in fetching: ", error));
-    //   }
-    // );
-    // // Use Promise.all to wait for all fetch requests to complete
-    // Promise.all(fetchQueryPromises)
-    // .then(results => {
-    //   // All fetch requests have completed successfully
-    //   console.log("All responses from backend received: ", results);
-    //   let timeTaken = Date.now() - start;
-    //   console.log("Total time taken : " + timeTaken + " milliseconds");
-    //   // Here, results is an array of responses from each fetch call
-    //   // You can process these results further as needed
-      
-    //   // For example, sending a message to sidebar view to render the results
-    //   browser.runtime.sendMessage({
-    //     action: 'updateResults',
-    //     data: results.flat(), // Flatten the array if needed or process as is
-    //     source: msg.source
-    //   });
-    // })
-    // .catch(error => {
-    //   // If any of the promises fails
-    //   console.log("Error in Promise.all: ", error);
-    // });
 })

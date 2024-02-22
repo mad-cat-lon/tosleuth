@@ -1,35 +1,4 @@
-import { useState, useEffect } from 'react';
-import browser from 'webextension-polyfill';
-
-const QueryCategorySelectionModal = (props) => {
-    
-    const { queries } = props;
-    // const [selected, select] = useState([]);
-    const [queryCategories, selectQueryCategory] = useState(queries);
-    
-    const handleCheck = index => {
-        selectQueryCategory(
-            queryCategories.map((query, currentIndex) => 
-                currentIndex === index ? { ...query, checked: !query.checked } : query
-            )
-        )
-    }
-
-    const handleSelection = () => {
-        browser.runtime.sendMessage({
-            action: 'addQueries',
-            data: queryCategories
-                .filter(
-                    query => query.checked === true
-                )
-                .reduce(
-                    (array, item) => {
-                        return array.concat(item.cases)
-                    }, []
-                )
-        })
-    }
-
+const QueryCategorySelectionModal = ({queryCategories, handleCheck, handleSubmit}) => {
     return (
         <dialog id="query_selection_modal" className="modal">
             <div className="modal-box">
@@ -54,7 +23,7 @@ const QueryCategorySelectionModal = (props) => {
                 <div className="modal-action">
                     <form method="dialog">
                         {/* if there is a button in form, it will close the modal */}
-                        <button className="btn" onClick={handleSelection}>Confirm selection</button>
+                        <button className="btn" onClick={() => handleSubmit()}>Confirm selection</button>
                     </form>
                 </div>
             </div>
