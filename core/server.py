@@ -7,6 +7,8 @@ import requests
 import chromadb
 import pprint
 import os
+import os
+from dotenv import load_dotenv
 # import markdownify
 # from playwright.async_api import async_playwright
 
@@ -52,6 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+load_dotenv()
 print("Setting up vector store...")
 # Handling vector store
 # Initialize persistent client and collection 
@@ -65,11 +68,6 @@ db = Chroma(
 )
 # reranker_model = CrossEncoder(model_name="BAAI/bge-reranker-large", max_length=512)
 print("Loaded vector store...")
-
-# Handling fireworks API
-# We can change the key later, just easier for dev
-if "FIREWORKS_API_KEY" not in os.environ:
-    os.environ["FIREWORKS_API_KEY"] = "0QX3IdsrikDEomAyxHtKVcW7WA5a4WfC5IlJkb0jbB79YiKB"
 fireworks_models = {
     # Smallest model, semi-functional
     "zephyr-3b": "accounts/stability/models/stablelm-zephyr-3b",
@@ -166,7 +164,7 @@ async def add_src_document(src_doc: SourceDocument):
     # Create Langchain Document object from our request
     original_doc = Document(
         page_content=src_doc.text,
-        metadata ={
+        metadata={
             "service": src_doc.service,
             "url": src_doc.url,
             "name": src_doc.name
@@ -196,7 +194,7 @@ async def add_src_document(src_doc: SourceDocument):
         chunk_overlap=250,
         length_function=len,
         separators=["\n\n", "\n", ""],
-        is_separator_regex = False,
+        is_separator_regex=False,
     )
     final_chunks = recursive_char_splitter.split_documents(split_by_headers)
     db.add_texts(
@@ -256,7 +254,13 @@ async def make_query(query: LLMQuery):
         # For each returned text from the vector store, insert into prompt,
         # send to model and parse response
         template = RAGQueryPromptTemplate(
-            input_variables=["query", "result1", "result2", "result3", "result4"]
+            input_variables=[
+                "query",
+                "result1",
+                "result2",
+                "result3",
+                "result4"
+            ]
         )
         prompt = template.format(
             query=query_text,
