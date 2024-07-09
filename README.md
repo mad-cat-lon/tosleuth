@@ -24,4 +24,7 @@
 The extension should be loaded until the browser is restarted
 
 
-![Sending requests to the backend with Postman](https://github.com/mad-cat-lon/tosleuth/assets/113548315/40486ea5-8bec-4217-b4d0-cca3cca78582)
+# Goals
+- Move to Manifest v3
+- Cross-platform compatibility
+- Simplify architecture (run vectorDB in extension itself)
