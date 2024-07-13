@@ -3,10 +3,13 @@ function injectLinkFinder() {
     .then((tabs) => {
       let currentTabId = tabs[0].id;
       console.log("Current Tab ID: ", currentTabId);
-      browser.tabs.executeScript(currentTabId, { file: '../js/linkFinder.js' });        
-    })
-    .catch((error) => {
-      console.error("Error getting the current tab ID: ", error);
+      browser.tabs.executeScript({file: "/js/browser-polyfill.js"}).then(
+        browser.tabs.executeScript(currentTabId, { file: '/js/linkFinder.js'})
+      ).catch((error) => {
+        console.error("Error getting the current tab ID: ", error);
+      });
+    }).catch((error) => {
+      console.error(error);
     });
 }
 
@@ -15,10 +18,13 @@ function injectGetContent() {
     .then((tabs) => {
       let currentTabId = tabs[0].id;
       console.log("Current Tab ID: ", currentTabId);
-      browser.tabs.executeScript(currentTabId, { file: '../js/getContent.js'})
-    })
-    .catch((error) => {
-      console.error("Error getting the current tab ID: ", error);
+      browser.tabs.executeScript({file: "/js/browser-polyfill.js"}).then(
+        browser.tabs.executeScript(currentTabId, { file: '/js/getContent.js'})
+      ).catch((error) => {
+        console.error("Error getting the current tab ID: ", error);
+      });
+    }).catch((error) => {
+      console.error(error);
     });
 }
 
@@ -32,7 +38,6 @@ function injectGetContent() {
 //     return result;
 //   }, []);
 // }
-
 browser.runtime.onInstalled.addListener(() => {
     console.log("Extension initialized.")
 })
