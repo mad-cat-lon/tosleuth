@@ -3,7 +3,7 @@ function sendHTML(query_after) {
     let url = window.location.href;
     let name = document.getElementsByTagName('title')[0].innerText;
     let service = (new URL(url)).hostname.replace('www.', '');
-    browser.runtime.sendMessage({
+    chrome.runtime.sendMessage({
         action: 'sendContent',
         service: service,
         url: url,

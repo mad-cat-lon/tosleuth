@@ -1,57 +1,50 @@
 const fs = require('fs');
 const path = require('path');
+const { promisify } = require('util');
 
-// Get the target browser from command line arguments
-const targetBrowser = process.argv[2];
+const copyFile = promisify(fs.copyFile);
+const mkdir = promisify(fs.mkdir);
+const readdir = promisify(fs.readdir);
+const stat = promisify(fs.stat);
 
-if (!targetBrowser) {
-  console.error('Please specify a target browser: "chrome" or "firefox".');
-  process.exit(1);
+async function copyDirectory(src, dest) {
+  try {
+    await mkdir(dest, { recursive: true });
+    const entries = await readdir(src, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const destPath = path.join(dest, entry.name);
+
+      if (entry.isDirectory()) {
+        await copyDirectory(srcPath, destPath);
+      } else {
+        await copyFile(srcPath, destPath);
+      }
+    }
+  } catch (err) {
+    console.error(`Error copying directory from ${src} to ${dest}:`, err);
+  }
 }
 
-const publicFolder = path.join(__dirname, 'public');
-const browserFolder = path.join(__dirname, 'browsers')
+async function main() {
+  const args = process.argv.slice(2);
+  const browser = args[0];
 
-// Define the source and destination file mappings for each browser
-const fileMappings = {
-  chrome: {
-    manifest: 'chrome-manifest.json',
-    index: 'chrome-index.html'
-  },
-  firefox: {
-    manifest: 'firefox-manifest.json',
-    index: 'firefox-index.html'
+  if (browser !== 'chrome' && browser !== 'firefox') {
+    console.error('Invalid argument. Please specify either "chrome" or "firefox".');
+    process.exit(1);
   }
-};
 
-// Ensure the target browser is valid
-if (!fileMappings[targetBrowser]) {
-  console.error('Invalid target browser specified. Use "chrome" or "firefox".');
-  process.exit(1);
+  const srcDir = path.join(__dirname, 'browsers', browser);
+  const destDir = path.join(__dirname, 'public');
+
+  try {
+    await copyDirectory(srcDir, destDir);
+    console.log(`Successfully copied ${browser} directory to public/`);
+  } catch (err) {
+    console.error('Error during copy operation:', err);
+  }
 }
 
-// Copy the manifest.json file
-fs.copyFile(
-  path.join(browserFolder, fileMappings[targetBrowser].manifest),
-  path.join(publicFolder, 'manifest.json'),
-  (err) => {
-    if (err) {
-      console.error('Error copying manifest.json:', err);
-      process.exit(1);
-    }
-    console.log(`Successfully copied ${fileMappings[targetBrowser].manifest} to manifest.json`);
-  }
-);
-
-// Copy the index.html file
-fs.copyFile(
-  path.join(browserFolder, fileMappings[targetBrowser].index),
-  path.join(publicFolder, 'index.html'),
-  (err) => {
-    if (err) {
-      console.error('Error copying index.html:', err);
-      process.exit(1);
-    }
-    console.log(`Successfully copied ${fileMappings[targetBrowser].index} to index.html`);
-  }
-);
+main();

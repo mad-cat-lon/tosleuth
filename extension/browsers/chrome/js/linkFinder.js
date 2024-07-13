@@ -17,7 +17,7 @@ function findLegalLinks() {
         .then(response => response.text())
         .then(text => {
           // Just send the URL to the backend so we can handle it for now
-          browser.runtime.sendMessage({
+          chrome.runtime.sendMessage({
             action: 'retrieveContent',
             data: text,
             source: link
