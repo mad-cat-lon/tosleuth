@@ -1,27 +1,32 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "TOSleuth",
   "version": "1.0",
   "description": "Analyze website terms-of-service and privacy agreements with AI",
   "permissions": [
     "activeTab",
-    "<all_urls>",
     "storage",
     "downloads",
-    "http://127.0.0.1:8000/add_from_url",
-    "tabs"
+    "tabs",
+    "sidePanel",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
   ],
   "icons": {
     "48": "padlock.png"
   },
   "background": {
-    "scripts": ["js/browser-polyfill.js", "js/background.js"],
-    "persistent": true
+    "service_worker": "js/background.js"
   },
-  "browser_action": {
+  "action": {
+    "default_title": "Click to open panel"
+  },
+  "side_panel": {
     "default_icon": "padlock.png",
     "default_title": "tosleuth",
-    "default_popup": "index.html"
-
+    "default_path": "index.html"
   }
 }

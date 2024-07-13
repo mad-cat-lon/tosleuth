@@ -1,53 +1,47 @@
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+});
+
 function injectLinkFinder() {
-  browser.tabs.query({ active: true, currentWindow: true })
-    .then((tabs) => {
-      let currentTabId = tabs[0].id;
-      console.log("Current Tab ID: ", currentTabId);
-      browser.tabs.executeScript({file: "/js/browser-polyfill.js"}).then(
-        browser.tabs.executeScript(currentTabId, { file: '/js/linkFinder.js'})
-      ).catch((error) => {
-        console.error("Error getting the current tab ID: ", error);
-      });
-    }).catch((error) => {
-      console.error(error);
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    let currentTabId = tabs[0].id;
+    console.log("Current Tab ID: ", currentTabId);
+    chrome.scripting.executeScript({
+      target: { tabId: currentTabId },
+      files: ["/js/linkFinder.js"]
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error("Error injecting scripts: ", chrome.runtime.lastError);
+      }
     });
+  });
 }
 
 function injectGetContent() {
-  browser.tabs.query({ active: true, currentWindow: true })
-    .then((tabs) => {
-      let currentTabId = tabs[0].id;
-      console.log("Current Tab ID: ", currentTabId);
-      browser.tabs.executeScript({file: "/js/browser-polyfill.js"}).then(
-        browser.tabs.executeScript(currentTabId, { file: '/js/getContent.js'})
-      ).catch((error) => {
-        console.error("Error getting the current tab ID: ", error);
-      });
-    }).catch((error) => {
-      console.error(error);
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    let currentTabId = tabs[0].id;
+    console.log("Current Tab ID: ", currentTabId);
+    chrome.scripting.executeScript({
+      target: { tabId: currentTabId },
+      files: ["/js/getContent.js"]
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error("Error injecting scripts: ", chrome.runtime.lastError);
+      }
     });
+  });
 }
 
-// function chunkArray(array, chunkSize) {
-//   return array.reduce((result, item, index) => {
-//     const chunkIndex = Math.floor(index / chunkSize);
-//     if (!result[chunkIndex]) {
-//       result[chunkIndex] = [];
-//     }
-//     result[chunkIndex].push(item);
-//     return result;
-//   }, []);
-// }
-browser.runtime.onInstalled.addListener(() => {
-    console.log("Extension initialized.")
-})
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("Extension initialized.");
+});
 
 let tosdr_cases = [];
 const query_endpoint = 'http://127.0.0.1:8000/query';
 const url_upload_endpoint = 'http://127.0.0.1:8000/add_from_url';
-const content_upload_endpoint = 'http://127.0.0.1:8000/add'
+const content_upload_endpoint = 'http://127.0.0.1:8000/add';
 
-browser.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Events from sidebar
   if (msg.action === 'autoAnalyze') {
     console.log('[!] autoAnalyze event received');
@@ -55,7 +49,7 @@ browser.runtime.onMessage.addListener((msg) => {
   }
 
   if (msg.action === 'standardAnalyze') {
-    console.log('[!] standardAnalyze event received')
+    console.log('[!] standardAnalyze event received');
     injectGetContent(true);
   }
 
@@ -79,9 +73,7 @@ browser.runtime.onMessage.addListener((msg) => {
       },
       body: JSON.stringify({ 'url': msg.source })
     })
-    .then(response => {
-      return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
       console.log("Response from backend received: ", data);
     })
@@ -106,31 +98,30 @@ browser.runtime.onMessage.addListener((msg) => {
         'text': msg.text
       })
     })
-    .then(response => {
-      return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-      browser.runtime.sendMessage({
+      chrome.runtime.sendMessage({
         action: 'backendResponse',
         type: 'upload',
         error: false,
         name: msg.name,
         service: msg.service,
         url: msg.url,
-      })
+      });
       console.log("Response from backend received: ", data);
     })
     .catch(error => {
-      browser.runtime.sendMessage({
+      chrome.runtime.sendMessage({
         action: 'backendResponse',
         type: 'upload',
         error: true,
         name: msg.name,
         service: msg.service,
         url: msg.url
-      })
+      });
       console.log("Error in fetching: ", error);
     });
+
     // We can either add a page, or add a page and immediately query it
     if (msg.query_after === true) {
       // Send queries to backend server immediately after adding file
@@ -144,18 +135,16 @@ browser.runtime.onMessage.addListener((msg) => {
           'service': msg.service
         })
       })
-      .then(response => {
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
         console.log("Response from backend received: ", data);
         let timeTaken = Date.now() - start;
         console.log("Total time taken : " + timeTaken + " milliseconds");
-        browser.runtime.sendMessage({
+        chrome.runtime.sendMessage({
           action: 'updateResults',
           data: data,
           source: msg.source
-        })
+        });
       })
       .catch(error => {
         console.log("Error in fetching: ", error);
@@ -176,19 +165,17 @@ browser.runtime.onMessage.addListener((msg) => {
         'service': msg.service
       })
     })
-    .then(response => {
-      return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
       console.log("Response from backend received: ", data);
-      browser.runtime.sendMessage({
+      chrome.runtime.sendMessage({
         action: 'updateResults',
         data: data,
         source: msg.source
-      })
+      });
     })
     .catch(error => {
       console.log("Error in fetching: ", error);
     });
   }
-})
+});
