@@ -73,14 +73,9 @@ function App() {
   }
 
   const handleMessage = (msg) => {
-    if (msg.action === 'loadingResults') {
-      setIsLoading(true);
-    }
     if (msg.action === 'updateResults') {
-      setResults(msg.data['results']);
-      setIsLoading(false);
+      setResults(prevResults => [...prevResults, ...msg.data['results']]);
     }
-    
     // success and error handling
     // TODO: this is really hacky
     if (msg.action === 'backendResponse') {
@@ -154,11 +149,11 @@ function App() {
     }
 
     // If categories are selected, send to background.js to make request to backend
+    setIsLoading(true);
     browser.runtime.sendMessage({
       action: 'analyzeStoredContent',
       service: targetService
     })
-    setIsLoading(true);
   }
 
   const handleChooseQueryCategory = (index) => {
@@ -284,7 +279,7 @@ function App() {
                       <p className="text-lg font-bold">Source in text</p>
                     </div>
                     <div class="tooltip tooltip-primary" data-tip="Click to open source document">
-                      <p className="text-base"><a href={`${item.source_url}#:~:text=${item.source_text.split('').slice(0, 3).join(' ')}`}>"{item.source_text}"</a></p>
+                      <p className="text-base"><a href={`${item.source_url}#:~:text=${item.source_text.split(' ').slice(0, 5).join(' ')}`}>"{item.source_text}"</a></p>
                     </div>
                     <div className="divider divider-error">
                       <p className="text-lg font-bold">Generated reasoning</p>

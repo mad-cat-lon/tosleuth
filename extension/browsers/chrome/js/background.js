@@ -32,6 +32,17 @@ function injectGetContent() {
   });
 }
 
+function chunkArray(array, chunkSize) {
+  return array.reduce((result, item, index) => {
+    const chunkIndex = Math.floor(index / chunkSize);
+    if (!result[chunkIndex]) {
+      result[chunkIndex] = [];
+    }
+    result[chunkIndex].push(item);
+    return result;
+  }, []);
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Extension initialized.");
 });
@@ -171,27 +182,50 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Send queries to docs already stored in backend
   if (msg.action === 'analyzeStoredContent') {
     console.log('[!] analyzeStoredContent event received');
-    fetch(query_endpoint, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        'tosdr_cases': tosdr_cases,
-        'service': msg.service
+    // chunk cases so user spends less time waiting
+    let chunked_cases = chunkArray(tosdr_cases, 3)
+    let promises = []
+    for (let i=0; i<chunked_cases.length; i++) {
+      let promise = fetch(query_endpoint, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          'tosdr_cases': chunked_cases[i],
+          'service': msg.service
+        })
       })
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log("Response from backend received: ", data);
+      .then(response => response.json())
+      .then(data => {
+        console.log("Response from backend received: ", data);
+        chrome.runtime.sendMessage({
+          action: 'updateResults',
+          data: data,
+          source: msg.source,
+        });
+      })
+      .catch(error => {
+        console.log("Error in fetching: ", error);
+      });
+      promises.push(promise)
+    }
+    Promise.all(promises)
+    .then(() => {
+      console.log("All requests have been finished.");
       chrome.runtime.sendMessage({
-        action: 'updateResults',
-        data: data,
-        source: msg.source
+        action: 'backendResponse',
+        error: false,
+        message: 'Analysis completed successfully'
       });
     })
     .catch(error => {
-      console.log("Error in fetching: ", error);
+      console.log("One or more requests failed: ", error);
+      chrome.runtime.sendMessage({
+        action: 'backendResponse',
+        error: true,
+        message: 'One or more requests failed'
+      });
     });
   }
 });
