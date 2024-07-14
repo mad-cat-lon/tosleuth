@@ -77,16 +77,30 @@ if (msg.action === 'retrieveContent') {
     headers: { 
         'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ 'url': msg.source })
+    body: JSON.stringify(msg.urls.map(url => ({ url })))
     })
     .then(response => {
     return response.json();
     })
     .then(data => {
-    console.log("Response from backend received: ", data);
+        browser.runtime.sendMessage({
+          action: 'backendResponse',
+          type: 'upload_url',
+          error: false,
+          service: msg.service,
+          message: data.message
+        });
+        console.log("Response from backend received: ", data);
     })
     .catch(error => {
-    console.log("Error in fetching: ", error);
+        browser.runtime.sendMessage({
+            action: 'backendResponse',
+            type: 'upload_url',
+            error: true,
+            service: msg.service,
+            message: error.message
+        });
+        console.log("Error in fetching: ", error);
     });
 }
 

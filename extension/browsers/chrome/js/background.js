@@ -71,13 +71,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       headers: { 
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ 'url': msg.source })
+      body: JSON.stringify(msg.urls.map(url => ({ url })))
     })
     .then(response => response.json())
     .then(data => {
+      chrome.runtime.sendMessage({
+        action: 'backendResponse',
+        type: 'upload_url',
+        error: false,
+        service: msg.service,
+        message: data.message
+      });
       console.log("Response from backend received: ", data);
     })
     .catch(error => {
+      chrome.runtime.sendMessage({
+        action: 'backendResponse',
+        type: 'upload_url',
+        error: true,
+        service: msg.service,
+        message: data.message
+      });
       console.log("Error in fetching: ", error);
     });
   }
@@ -102,22 +116,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     .then(data => {
       chrome.runtime.sendMessage({
         action: 'backendResponse',
-        type: 'upload',
+        type: 'upload_content',
         error: false,
         name: msg.name,
         service: msg.service,
         url: msg.url,
+        message: data.message
       });
       console.log("Response from backend received: ", data);
     })
     .catch(error => {
       chrome.runtime.sendMessage({
         action: 'backendResponse',
-        type: 'upload',
+        type: 'upload_content',
         error: true,
         name: msg.name,
         service: msg.service,
-        url: msg.url
+        url: msg.url,
+        message: data.message
       });
       console.log("Error in fetching: ", error);
     });

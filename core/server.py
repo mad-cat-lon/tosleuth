@@ -9,9 +9,8 @@ import pprint
 import os
 import os
 from dotenv import load_dotenv
-# import markdownify
-# from playwright.async_api import async_playwright
-
+from playwright.async_api import async_playwright
+import tldextract
 # from sentence_transformers import CrossEncoder
 
 from langchain.vectorstores import Chroma
@@ -110,35 +109,6 @@ llm = Fireworks(
     }
 )
 
-# def rerank_docs(query, retrieved_docs):
-#     query_and_docs = [(query, r.page_content) for r in retrieved_docs]
-#     scores = reranker_model.predict(query_and_docs)
-#     return sorted(list(zip(retrieved_docs, scores)), key=lambda x: x[1], reverse=True)
-
-
-# @app.post("/rag_query", status_code=200)
-# async def rag_query(query: LLMQuery):
-#     response = {
-#     }
-#     for query_text in query.tosdr_cases:
-#             result = {}
-#             query_response = await asyncio.to_thread(
-#                 db.similarity_search,
-#                 query=query_text,
-#                 k=10,
-#                 filter={"service": query.service},
-#                 include=["documents", "metadatas"]
-#             )
-#             # reranked = rerank_docs(query_text, query_response)
-#             # for doc in reranked:
-#             #     print(doc)
-#             response[query_text] = {
-#                 "vanilla": query_response,
-#                 # "reranked": rerank_docs(query_text, query_response)
-#             }
-            
-#     return response 
-
 @app.get("/")
 async def root():
     return {"message": "Hello World!"}
@@ -173,9 +143,6 @@ async def add_src_document(src_doc: SourceDocument):
     # Turn HTML of page into markdown
     html2text = Html2TextTransformer()
     md_doc = html2text.transform_documents([original_doc])[0]
-    print("="*100)
-    print(md_doc.page_content)
-    print("="*100)
 
     # Break down markdown text by header and include into metadata
     headers_to_split_on = [
@@ -205,24 +172,35 @@ async def add_src_document(src_doc: SourceDocument):
     return {"message": f"Successfully added document {src_doc.name} from {src_doc.service} to the vector store."}
 
 
+async def scrape_raw_document_from_url(browser, url, service):
+    page = await browser.new_page()
+    await page.goto(url)
+    html = await page.content()
+    # Only get the domain without subdomain to avoid cases
+    # where the service would be "github.com" but source doc links
+    # are in "docs.github.com" 
+    name = await page.title()
+    src_doc = SourceDocument(
+        service=service,
+        url=url,
+        name=name,
+        text=html
+    )
+    await add_src_document(src_doc)
+
+
 @app.post("/add_from_url", status_code=200)
-async def add_src_document_from_url(url: URL):
+async def add_src_document_from_url(urls: List[URL]):
     """
     Gets a URL to a resource and retrieves the raw document
     """
-    # TODO: Finish this later with langchain's built in loaders 
-    # https://python.langchain.com/docs/modules/data_connection/document_loaders/
-    print(url.url)
-    # async with async_playwright() as p:
-    #     browser = await p.firefox.launch(headless=True)
-    #     service, url, name, text = await scrape_raw_document_from_url(browser, url.url)
-    #     storage.load_from_text(
-    #         service,
-    #         url,
-    #         name,
-    #         text
-    #     )
-    # return {"message": f"Scraped document from {url} and added to vector storage"}
+    # Assuming all the docs will have the same domain
+    service = tldextract.extract(urls[0].url).registered_domain
+    async with async_playwright() as p:
+        browser = await p.firefox.launch(headless=True)
+        for url in urls:
+            await scrape_raw_document_from_url(browser, url.url, service)
+    return {"message": f"Discovered and processed {len(urls)} documents in {service}"}
 
     
 @app.post("/query", status_code=200)
@@ -235,7 +213,7 @@ async def make_query(query: LLMQuery):
     extension_response = {
         "results": []
     }
-
+    print(query)
     # For each case, search the vector database for results
     for query_text in query.tosdr_cases:
         result = {}

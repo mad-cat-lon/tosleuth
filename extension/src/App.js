@@ -87,7 +87,8 @@ function App() {
       setIsLoading(false);
       setBackendResponse(msg);
       setShowAlert(true);
-      if (msg.error === false && msg.type === 'upload') {
+      if (msg.error === false && msg.type === 'upload_content' || msg.type == 'upload_url' || msg.type == 'upload') {
+        // Handle manual content upload success
         // if we successfully uploaded then add to the list of services and docs 
         setServices(prevServices => {
           // Check if service exists
@@ -202,7 +203,7 @@ function App() {
           (
             <Alert
               alertClass={backendResponse.error ? 'alert-error' : 'alert-success'}
-              alertMessage={backendResponse.error ? `Could not upload document "${backendResponse.name}"` : `Uploaded document "${backendResponse.name}"`}
+              alertMessage={backendResponse.message}
               alertAnimation='animate-slide-in-down'
               handleOnAnimationEnd={() => !showAlert && setBackendResponse(null)}
             />
@@ -259,9 +260,9 @@ function App() {
             </div>
             <ConfirmAnalyzeModal service={currentService} queryCategories={queryCategories} handleConfirm={handleAnalyzeStoredDocs}/>
             
-            <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAnalyze}> 👁️ Analyze current page</button>
-            {/* <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAutoAnalyze}>🔍 Auto-analyze</button> */}
-            <button className="btn btn-lg btn-accent btn-wide btn-active w-full" onClick={clearData}>🗑️ Clear all data</button>
+            {/* <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAnalyze}> 👁️ Analyze current page</button> */}
+            <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAutoAnalyze}>🔍 Discover documents</button>
+            <button className="btn btn-lg btn-accent btn-wide btn-active w-full" onClick={clearData}>🗑️ Clear data</button>
         </div>
         {
           results.length > 0 && (
@@ -283,7 +284,7 @@ function App() {
                       <p className="text-lg font-bold">Source in text</p>
                     </div>
                     <div class="tooltip tooltip-primary" data-tip="Click to open source document">
-                      <p className="text-base"><a href={item.source_url}>"{item.source_text}"</a></p>
+                      <p className="text-base"><a href={`${item.source_url}#:~:text=${item.source_text.split('').slice(0, 3).join(' ')}`}>"{item.source_text}"</a></p>
                     </div>
                     <div className="divider divider-error">
                       <p className="text-lg font-bold">Generated reasoning</p>
