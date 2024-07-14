@@ -133,7 +133,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         name: msg.name,
         service: msg.service,
         url: msg.url,
-        message: data.message
+        message: error.message
       });
       console.log("Error in fetching: ", error);
     });

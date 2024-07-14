@@ -131,6 +131,7 @@ if (msg.action === 'sendContent') {
         name: msg.name,
         service: msg.service,
         url: msg.url,
+        message: data.message
     })
     console.log("Response from backend received: ", data);
     })
@@ -141,7 +142,8 @@ if (msg.action === 'sendContent') {
         error: true,
         name: msg.name,
         service: msg.service,
-        url: msg.url
+        url: msg.url,
+        message: error.message
     })
     console.log("Error in fetching: ", error);
     });
