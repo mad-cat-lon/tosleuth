@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         type: 'upload_url',
         error: true,
         service: msg.service,
-        message: data.message
+        message: error.message
       });
       console.log("Error in fetching: ", error);
     });
