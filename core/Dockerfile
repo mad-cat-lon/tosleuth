@@ -40,8 +40,14 @@ RUN mkdir ~/.cache
 RUN chmod -R 777 ~/.cache
 RUN python -c 'from sentence_transformers import SentenceTransformer; embedder = SentenceTransformer("all-MiniLM-L6-v2")'
 
-# Switch to the non-privileged user to run the application.
-# USER appuser
+# From https://stackoverflow.com/questions/71042138/docker-and-playwright
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/ms-playwright
+RUN apt-get clean
+RUN apt-get update
+# Manually install missing libs for playwright
+RUN apt-get install -y gconf-service libasound2 libatk1.0-0 libcairo2 libcups2 libfontconfig1 libgdk-pixbuf2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libxss1 fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils
+RUN PLAYWRIGHT_BROWSERS_PATH=/app/ms-playwright python -m playwright install --with-deps firefox
 
 # Copy the source code into the container.
 COPY . .
