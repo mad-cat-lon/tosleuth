@@ -109,10 +109,6 @@ llm = Fireworks(
     }
 )
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World!"}
-
 
 @app.post("/add", status_code=200)
 async def add_src_document(src_doc: SourceDocument):
@@ -122,14 +118,13 @@ async def add_src_document(src_doc: SourceDocument):
     and vectorizes it
     """
     print(f"Adding {src_doc.name} from {src_doc.service}")
-    
     # Check if source document already exists in our db
     query_response = await asyncio.to_thread(
         db.get,
         where={"url": src_doc.url}
     )
     if query_response["documents"]:
-        return {"message": f"Document {src_doc.url} for service {src_doc.service} already exists in the database"}
+        raise HTTPException(status_code=400, detail={"message": f"Document {src_doc.url} for service {src_doc.service} already exists in the database"})
     
     # Create Langchain Document object from our request
     original_doc = Document(
@@ -224,7 +219,7 @@ async def make_query(query: LLMQuery):
             filter={"service": query.service},
             include=["documents", "metadatas"]
         )
-        print(query_response)
+        # print(query_response)
         if len(query_response) < 4:
             result["error"] = 0
             extension_response["results"].append(result)            
@@ -244,9 +239,9 @@ async def make_query(query: LLMQuery):
             query=query_text,
             results=[doc.page_content for doc in query_response]
         )
-        print("="*100)
-        print(prompt)
-        print("="*100)
+        # print("="*100)
+        # print(prompt)
+        # print("="*100)
 
         llm_response = llm(prompt)
         print(llm_response)

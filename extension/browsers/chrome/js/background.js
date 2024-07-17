@@ -84,7 +84,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       },
       body: JSON.stringify(msg.urls.map(url => ({ url })))
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(error =>  {
+          throw new Error(error.detail.message);
+        });
+      }
+      return response.json();
+    })
     .then(data => {
       chrome.runtime.sendMessage({
         action: 'backendResponse',
@@ -96,6 +103,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       console.log("Response from backend received: ", data);
     })
     .catch(error => {
+      console.log(error);
       chrome.runtime.sendMessage({
         action: 'backendResponse',
         type: 'upload_url',
@@ -123,7 +131,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         'text': msg.text
       })
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(error =>  {
+          throw new Error(error.detail.message);
+        });
+      }
+      return response.json();
+    })
     .then(data => {
       chrome.runtime.sendMessage({
         action: 'backendResponse',
