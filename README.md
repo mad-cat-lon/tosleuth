@@ -50,9 +50,9 @@ The extension should be loaded until the browser is restarted
 
 
 # Goals
-- [x] ~Move to Manifest v3~
-- [x] ~Cross-platform compatibility~
-- [] Auto-analysis mode, where the extension will automatically find and scrape all relevant documents when the user visits a site
-- [] Improved configurability and UX (let users set API key, etc. from UI)
-- [] Make UI less cluttered 
-- [] Simplify architecture (run vectorDB in extension itself)
+[x] ~Move to Manifest v3~
+[x] ~Cross-platform compatibility~ 
+[] Auto-analysis mode, where the extension will automatically find and scrape all relevant documents when the user visits a site
+[] Improved configurability and UX (let users set API key, etc. from UI)
+[] Make UI less cluttered 
+[] Simplify architecture (run vectorDB in extension itself)

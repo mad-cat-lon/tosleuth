@@ -196,6 +196,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   // Send queries to docs already stored in backend
   if (msg.action === 'analyzeStoredContent') {
+    if (tosdr_cases.length === 0) {
+      chrome.runtime.sendMessage({
+        action: 'backendResponse',
+        error: true,
+        message: 'Select 1 or more analysis categories'
+      });
+      return;
+    }
     console.log('[!] analyzeStoredContent event received');
     // chunk cases so user spends less time waiting
     let chunked_cases = chunkArray(tosdr_cases, 3)

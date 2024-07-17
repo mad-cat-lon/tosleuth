@@ -32,7 +32,7 @@ module.exports = {
         },
       },
       animation: {
-        'slide-in-down': 'slideInDown 0.5s ease-out forwards',
+        'slide-in-down': 'slideInDown  2s ease-out forwards',
         'fade-out': 'fadeOut 0.5s ease-out forwards',
         'shake': 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both',
       },

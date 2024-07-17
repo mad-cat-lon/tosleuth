@@ -141,13 +141,6 @@ function App() {
 
   async function handleAnalyzeStoredDocs(targetService) {
     // Check for selected query category before analysis
-    const isCategorySelected = queryCategories.some(query => query.checked);
-    if (!isCategorySelected) {
-      setError(true); // Indicate there is an error
-      setShowAlert(true); // Show the alert immediately
-      return; // Prevent further execution
-    }
-
     // If categories are selected, send to background.js to make request to backend
     setIsLoading(true);
     browser.runtime.sendMessage({
@@ -200,18 +193,7 @@ function App() {
               alertClass={backendResponse.error ? 'alert-error' : 'alert-success'}
               alertMessage={backendResponse.message}
               alertAnimation='animate-slide-in-down'
-              handleOnAnimationEnd={() => !showAlert && setBackendResponse(null)}
-            />
-          )
-        }
-        {
-          showAlert && error &&
-          (
-            <Alert
-              alertClass='alert-error'
-              alertMessage='You must select an analysis category'
-              alertAnimation='animate-slide-in-down'
-              handleOnAnimationEnd={() => !showAlert && setError(null)}
+              handleOnAnimationEnd={() => setShowAlert(false) && setBackendResponse(null)}
             />
           )
         }
@@ -278,7 +260,7 @@ function App() {
                     <div className="divider divider-error">
                       <p className="text-lg font-bold">Source in text</p>
                     </div>
-                    <div class="tooltip tooltip-primary" data-tip="Click to open source document">
+                    <div class="tooltip tooltip-primary" data-tip="Click to go to source">
                       <p className="text-base"><a href={`${item.source_url}#:~:text=${item.source_text.split(' ').slice(0, 5).join(' ')}`}>"{item.source_text}"</a></p>
                     </div>
                     <div className="divider divider-error">

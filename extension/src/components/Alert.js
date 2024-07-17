@@ -9,10 +9,9 @@ const Alert = (props) => {
             role="alert"
             className={`alert fixed top-5 ${alertClass} ${alertAnimation} p-2 max-w-lg z-50`}
             onAnimationEnd={() => handleOnAnimationEnd}
-        >
-            <span className="ml-3">
+        >   <h2 class="font-bold">
                 {alertMessage}
-            </span>
+            </h2>
         </div>
     )
 }
