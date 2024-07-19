@@ -1,42 +1,12 @@
 from langchain.prompts import StringPromptTemplate
 from pydantic import BaseModel, validator
 
-# PROMPT = """
-# <s>[INST]
-# You are an expert lawyer analyzing terms of service agreements. Given a statement about the service and 4 pieces of text extracted from its documents, pick the number of the text that can directly provide an answer to the query. Output a valid JSON object containing the choice of text and your reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false. 
-# Here is an example:
-# Given the statement "You sign away all moral rights", which of the following texts, if any, answer it?
-
-# 1) "you irrevocably waive any claims and assertions of moral rights or attribution with respect to Your Content."
-
-# 2) "We reserve the right to modify, suspend, or discontinue the Services (in whole or in part) at any time"
-
-# 3) "You will not license, sell, or transfer your Account without our prior written approval."
-
-# 4) "By submitting Your Content to the Services, you represent and warrant that you have all rights, power, and authority necessary to grant the rights to Your Content contained within these Terms. Because you alone are responsible for Your 
-# Content, you may expose yourself to liability if you post or share Content without all necessary rights."
-# {{
-#     "choice": 1,
-#     "reason": "This text explicitly mentions that the user waives moral rights with respect to their content, which aligns with the statement. The other texts do not directly address moral rights and are unrelated to the given statement.",
-#     "answer": true
-# }}
-# Given the statement "{query}", which texts answer it directly? Answer in JSON.
-# 1) {result1}
-
-# 2) {result2}
-
-# 3) {result3}
-
-# 4) {result4}
-# [/INST]
-# """
-
 PROMPT = """
 <|system|>
-You are an expert lawyer analyzing terms of service agreements. Given a statement about the service and 4 pieces of text extracted from its documents, pick the number of the text that can directly provide an answer to the query. Output a valid JSON object containing the choice of text and concise reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false. 
+You are an expert lawyer analyzing terms of service agreements. Given a statement about the service and 4 pieces of text extracted from its documents, pick the number of the text that directly answers the query in its entirety. Output a valid JSON object containing the choice of text and concise reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false. 
 Here are some examples: 
 
-Given the statement "You sign away all moral rights", which of the following texts, if any, answer it?
+Given the statement "You sign away all moral rights", which of the following texts, if any, answer it fully?
 
 1)
 ```
@@ -56,39 +26,62 @@ Content, you may expose yourself to liability if you post or share Content witho
 ```
 {{
     "choice": 1,
-    "reason": "This text explicitly mentions that the user waives moral rights with respect to their content, which aligns with the statement. The other texts do not directly address moral rights and are unrelated to the given statement.",
+    "reason": "This text explicitly mentions that the user waives moral rights with respect to their content, which answers the statement entirely. The other texts do not directly address moral rights, are unrelated to the given statement, or do not answer it fully.",
     "answer": true
 }}
 
-Given the statement "Your biometric data is collected", which of the following texts, if any, answer it?
+Given the statement 'The cookies used only collect anonymous, aggregated data that cannot be linked to a unique identity', which text answers it fully? 
 1)
 ```
-We need this information to be able to recognize you, for example, when you
-access your accounts. It also helps us to protect your details and keep them
-secure. We may also use this information for fraud detection and prevention.
+personalized, unique and relevant offering, as this is why users come to the
+Service.
+#### Information categories used
+* Account information (excluding race or ethnicity)
+* Content
+* Location information
+* Log data
+* Information from cookie data and similar technologies (To find out more about how we use cookies, please see our Cookie Policy)
+* Device information
+* Usage data and inferences
+* User choices
 ```
 2)
 ```
-We have set out below an overview of how our privacy notices work. Depending
-on how you interact with us, we will collect and process your personal
-information as shown below.
+*  **Information from cookies and similar technologies** : We also use “cookies” or similar technologies to obtain log data. For example, we use cookies to store your language preferences or other settings so you don‘t have to set them up every time you visit Pinterest. For more information about how we use cookies, please review our Cookie Policy.
 ```
 3)
 ```
-HOW WE USE YOUR PERSONAL DATA
+these purposes. To do so, visit your Privacy and Data Settings.
+When we use cookies to learn about your behavior on or off of our services, we
+or our partners will obtain consent that we may need under applicable law. To
+find out more about how we use cookies, please see our Cookie Policy.
+Additional Info for EEA, Swiss and UK Data Subjects: Legal bases we rely on
+where we use your information
+The below section only applies for residents in the EEA, Switzerland, and UK.
 ```
 4)
 ```
-**Information we use to identify and authenticate you**
+The actual information used depends on the factual circumstances, but could
+include any of the following:
+* Account information (excluding race or ethnicity)
+* Content
+* Location information
+* Your communications with us
+* Log data
+* Information from cookie data and similar technologies (To find out more about how we use cookies, please see our Cookie Policy)
+* Device information
+* Usage data and inferences
+* User choices
 ```
+
 {{
     "choice": 0,
-    "reason": "The provided texts mention data collection and authentication, but none specifically mention the collection of biometric data.",
+    "reason": "All of the texts mention cookie and data usage, but none indicate that the data is anonymous and cannot be liked to an identity.",
     "answer": false
 }}
 </s>
 <|user|>
-Given the statement "{query}", which text provides enough context to explicitly answer it? Do not infer or imply anything not provided in the texts. Answer with a single JSON object as demonstrated above.
+Given the statement "{query}", which text provides enough context to explicitly answer the entire statement? Do not infer or imply anything not provided in the texts. Answer with a single JSON object as demonstrated above.
 1)
 ```
 {result1}
