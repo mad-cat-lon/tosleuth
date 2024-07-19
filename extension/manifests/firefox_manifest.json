@@ -6,8 +6,6 @@
   "permissions": [
     "activeTab",
     "<all_urls>",
-    "storage",
-    "downloads",
     "http://127.0.0.1:8000/add_from_url"
   ],
   "icons": {

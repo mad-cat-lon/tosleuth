@@ -5,8 +5,6 @@
   "description": "Analyze website terms-of-service and privacy agreements with AI",
   "permissions": [
     "activeTab",
-    "storage",
-    "downloads",
     "tabs",
     "sidePanel",
     "scripting"
