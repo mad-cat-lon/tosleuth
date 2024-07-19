@@ -199,7 +199,10 @@ async def add_src_document_from_url(urls: List[URL]):
         for url in urls:
             if await scrape_raw_document_from_url(browser, url.url, service):
                 succeeded += 1
-    return {"message": f"Discovered and processed {succeeded}/{len(urls)} documents in {service}"}
+    return {
+        "message": f"Discovered and processed {succeeded}/{len(urls)} documents in {service}",
+        "service": service
+        }
 
     
 @app.post("/query", status_code=200)

@@ -135,7 +135,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         action: 'backendResponse',
         type: 'upload_url',
         error: false,
-        service: msg.service,
+        service: data.service,
         message: data.message
       });
       console.log("Response from backend received: ", data);
@@ -146,7 +146,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         action: 'backendResponse',
         type: 'upload_url',
         error: true,
-        service: msg.service,
+        service: data.service,
         message: error.message
       });
       console.log("Error in fetching: ", error);
