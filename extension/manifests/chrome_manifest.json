@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "TOSleuth",
+  "name": "ToSleuth",
   "version": "1.0",
-  "description": "Analyze website terms-of-service and privacy agreements with AI",
+  "description": "Analyze website terms and conditions with AI",
   "permissions": [
     "activeTab",
-    "tabs",
     "sidePanel",
     "scripting"
   ],
