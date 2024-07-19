@@ -33,13 +33,15 @@ Alternatively, you can try the following at your own risk:
 3. Build instructions:
     - For Firefox Manifest v2, do `npm run build:firefox`
     - For Chrome Manifest v3, do `npm run build:chrome`
+**If you don't want to build it locally, you can download the latest [releases](https://github.com/mad-cat-lon/tosleuth/releases/latest)**
 
 ## Running the Chrome extension
 1. Go to `chrome://extensions/`
 2. Click "Load unpacked"
 3. Navigate to the build folder (under `/extension/build`)
 4. Select the folder
-You should see the side panel open and the extension loaded
+You should see the side panel open and the extension loaded. 
+
 
 ## Running the Firefox extension 
 1. Go to `about:debugging#/runtime/this-firefox`
