@@ -126,8 +126,10 @@ async def add_src_document(src_doc: SourceDocument):
         }
     )
     if query_response["documents"]:
-        raise HTTPException(status_code=400, detail={
-            "message": f"Document {src_doc.url} for service \
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": f"Document {src_doc.url} for service \
                 {src_doc.service} already exists in the database"
             }
         )
@@ -176,7 +178,7 @@ async def add_src_document(src_doc: SourceDocument):
     return {
         "message": f"Successfully added document {src_doc.name} \
             from {src_doc.service} to the vector store."
-        }
+    }
 
 
 async def scrape_raw_document_from_url(browser, url, service):
@@ -220,7 +222,7 @@ async def add_src_document_from_url(urls: List[URL]):
         "message": f"Discovered and processed {succeeded}/{len(urls)}\
               documents in {service}",
         "service": service
-        }
+    }
 
 
 @app.post("/query", status_code=200)
@@ -274,7 +276,7 @@ async def make_query(query: LLMQuery):
             response = json.loads(llm_response)
             # Extract the choice
             choice = response["choice"]
-            chosen_doc = query_response[choice-1]
+            chosen_doc = query_response[choice - 1]
             source_text = chosen_doc.page_content if choice != 0 else ""
             # TODO: Fix field duplication later
             result["source_text"] = source_text
