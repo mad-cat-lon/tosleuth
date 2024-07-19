@@ -1,13 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from typing import Union, List
-from pydantic import BaseModel 
 import json
 import asyncio
-import requests
 import chromadb
-import pprint
-import os
-import os
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 import tldextract
@@ -22,22 +17,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, MarkdownHead
 from fastapi.middleware.cors import CORSMiddleware
 
 from prompts import RAGQueryPromptTemplate
-
-class URL(BaseModel):
-    url: str
-
-
-class SourceDocument(BaseModel):
-    service: str
-    url: str
-    name: str
-    text: str
-
-
-class LLMQuery(BaseModel):
-    tosdr_cases: List[str]
-    service: Union[str, None]
-    doc_name: Union[str, None]
+from models import URL, SourceDocument, LLMQuery
 
 app = FastAPI()
 # storage = VectorStore()
