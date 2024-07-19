@@ -1,19 +1,47 @@
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
-});
+function getBrowser() {
+  const userAgent = navigator.userAgent;
+
+  if (userAgent.indexOf("Firefox") !== -1) {
+    return "Firefox";
+  } else if (userAgent.indexOf("Chrome") !== -1 && userAgent.indexOf("Edge") === -1) {
+    // Chrome's user agent contains "Chrome" and does not include "Edge"
+    return "Chrome";
+  } else {
+    return "Unknown";
+  }
+}
+const userBrowser = getBrowser();
+console.log("Current browser is: " + userBrowser);
+
+if (userBrowser == "Chrome") {
+  // Open the chrome side panel
+  chrome.runtime.onInstalled.addListener(() => {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  });
+}
 
 function injectLinkFinder() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     let currentTabId = tabs[0].id;
     console.log("Current Tab ID: ", currentTabId);
-    chrome.scripting.executeScript({
-      target: { tabId: currentTabId },
-      files: ["/js/linkFinder.js"]
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.error("Error injecting scripts: ", chrome.runtime.lastError);
-      }
-    });
+    if (userBrowser == "Chrome") {
+      chrome.scripting.executeScript({
+        target: { tabId: currentTabId },
+        files: ["/js/linkFinder.js"]
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Error injecting scripts: ", chrome.runtime.lastError);
+        }
+      });
+    }
+    else if (userBrowser == "Firefox") {
+      browser.tabs.executeScript(currentTabId, { file: '/js/linkFinder.js'})
+      .then(() => {
+        console.log("Script injected successfully.");
+      }).catch((error) => {
+        console.error("Error injecting scripts: ", error);
+      });
+    }
   });
 }
 
@@ -21,14 +49,24 @@ function injectGetContent() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     let currentTabId = tabs[0].id;
     console.log("Current Tab ID: ", currentTabId);
-    chrome.scripting.executeScript({
-      target: { tabId: currentTabId },
-      files: ["/js/getContent.js"]
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.error("Error injecting scripts: ", chrome.runtime.lastError);
-      }
-    });
+    if (userBrowser == "Chrome") {
+      chrome.scripting.executeScript({
+        target: { tabId: currentTabId },
+        files: ["/js/getContent.js"]
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Error injecting scripts: ", chrome.runtime.lastError);
+        }
+      });
+    }
+    else if (userBrowser == "Firefox") {
+      browser.tabs.executeScript(currentTabId, { file: '/js/getContent.js'})
+      .then(() => {
+        console.log("Script injected successfully.");
+      }).catch((error) => {
+        console.error("Error injecting scripts: ", error);
+      });
+    }
   });
 }
 
