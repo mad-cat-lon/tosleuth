@@ -82,7 +82,7 @@ function App() {
       setIsLoading(false);
       setBackendResponse(msg);
       setShowAlert(true);
-      if (msg.error === false && (msg.type === 'upload_content' || msg.type == 'upload_url' || msg.type === 'upload')) {
+      if (msg.error === false && (msg.type === 'upload_content' || msg.type === 'upload_url' || msg.type === 'upload')) {
         // Handle manual content upload success
         // if we successfully uploaded then add to the list of services and docs 
         setServices(prevServices => {
@@ -119,7 +119,7 @@ function App() {
     if (showAlert) {
       timer = setTimeout(() => {
         setShowAlert(false); // Hide the toast after 2 seconds
-      }, 2000); 
+      }, 3500); 
     }
     return () => clearTimeout(timer); // Cleanup the timer
   }, [showAlert]); // This effect depends on the showAlert state

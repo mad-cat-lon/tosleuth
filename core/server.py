@@ -121,7 +121,23 @@ async def add_src_document(src_doc: SourceDocument):
     # Check if source document already exists in our db
     query_response = await asyncio.to_thread(
         db.get,
-        where={"url": src_doc.url}
+        where={
+            "$or": [
+                {
+                    "url": src_doc.url
+                },
+                {
+                    "$and": [
+                        {
+                            "name": src_doc.name
+                        },
+                        {
+                            "service": src_doc.service
+                        }
+                    ]
+                }
+            ],
+        }
     )
     if query_response["documents"]:
         raise HTTPException(status_code=400, detail={"message": f"Document {src_doc.url} for service {src_doc.service} already exists in the database"})
@@ -168,21 +184,27 @@ async def add_src_document(src_doc: SourceDocument):
 
 
 async def scrape_raw_document_from_url(browser, url, service):
-    page = await browser.new_page()
-    await page.goto(url)
-    html = await page.content()
-    # Only get the domain without subdomain to avoid cases
-    # where the service would be "github.com" but source doc links
-    # are in "docs.github.com" 
-    name = await page.title()
-    src_doc = SourceDocument(
-        service=service,
-        url=url,
-        name=name,
-        text=html
-    )
-    await add_src_document(src_doc)
-
+    try:
+        page = await browser.new_page()
+        await page.goto(url)
+        html = await page.content()
+        # Only get the domain without subdomain to avoid cases
+        # where the service would be "github.com" but source doc links
+        # are in "docs.github.com" 
+        name = await page.title()
+        src_doc = SourceDocument(
+            service=service,
+            url=url,
+            name=name,
+            text=html
+        )
+        try:
+            await add_src_document(src_doc)
+            return True
+        except HTTPException:
+            return False
+    except Exception:
+        return False
 
 @app.post("/add_from_url", status_code=200)
 async def add_src_document_from_url(urls: List[URL]):
@@ -191,11 +213,13 @@ async def add_src_document_from_url(urls: List[URL]):
     """
     # Assuming all the docs will have the same domain
     service = tldextract.extract(urls[0].url).registered_domain
+    succeeded = 0
     async with async_playwright() as p:
         browser = await p.firefox.launch(headless=True)
         for url in urls:
-            await scrape_raw_document_from_url(browser, url.url, service)
-    return {"message": f"Discovered and processed {len(urls)} documents in {service}"}
+            if await scrape_raw_document_from_url(browser, url.url, service):
+                succeeded += 1
+    return {"message": f"Discovered and processed {succeeded}/{len(urls)} documents in {service}"}
 
     
 @app.post("/query", status_code=200)

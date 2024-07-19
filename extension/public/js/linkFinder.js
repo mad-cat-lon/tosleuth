@@ -15,17 +15,22 @@ function rootDomain(hostname) {
   return parts.slice(-2).join('.');
 }
 
+function removeQueryAndHash(url) {
+  let urlObj = new URL(url);
+  return urlObj.origin + urlObj.pathname;
+}
+
 function findLegalLinks() {
   let url = window.location.href;
   let name = document.getElementsByTagName('title')[0].innerText;
   let service = rootDomain((new URL(url)).hostname);
   console.log(service)
   const links = Array.from(document.links);
+    console.log(links)
   let legalLinks = links.filter(link => {
     return /terms|privacy|legal|policy/i.test(link.href);
   });
-  console.log(legalLinks);
-  legalLinks = legalLinks.map(link => link.href)
+  legalLinks = legalLinks.map(link => removeQueryAndHash(link.href))
   legalLinks = removeDuplicates(legalLinks)
   console.log(legalLinks);
   chrome.runtime.sendMessage({
