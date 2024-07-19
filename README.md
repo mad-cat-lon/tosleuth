@@ -33,6 +33,7 @@ Alternatively, you can try the following at your own risk:
 3. Build instructions:
     - For Firefox Manifest v2, do `npm run build:firefox`
     - For Chrome Manifest v3, do `npm run build:chrome`
+
 **If you don't want to build it locally, you can download the latest [releases](https://github.com/mad-cat-lon/tosleuth/releases/latest)**
 
 ## Running the Chrome extension
@@ -40,6 +41,7 @@ Alternatively, you can try the following at your own risk:
 2. Click "Load unpacked"
 3. Navigate to the build folder (under `/extension/build`)
 4. Select the folder
+
 You should see the side panel open and the extension loaded. 
 
 
@@ -48,13 +50,14 @@ You should see the side panel open and the extension loaded.
 2. Click "Load temporary addon"
 3. Navigate to the extension build folder (under `/extension/build`)
 4. Click `manifest.json`
+
 The extension should be loaded until the browser is restarted
 
 
 # Goals
 - [x] ~Move to Manifest v3~
 - [x] ~Cross-platform compatibility~ 
-- [] Auto-analysis mode, where the extension will automatically find and scrape all relevant documents when the user visits a site (50% done, improvements pending)
-- [] Improved configurability and UX (let users set API key, etc. from UI)
-- [] Make UI less cluttered 
-- [] Simplify architecture (run vectorDB in extension itself)
+- [ ] Auto-analysis mode, where the extension will automatically find and scrape all relevant documents when the user visits a site (50% done, improvements pending)
+- [ ] Improved configurability and UX (let users set API key, etc. from UI)
+- [ ] Make UI less cluttered 
+- [ ] Simplify architecture (run vectorDB in extension itself)
