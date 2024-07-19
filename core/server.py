@@ -219,8 +219,8 @@ async def add_src_document_from_url(urls: List[URL]):
             if await scrape_raw_document_from_url(browser, url.url, service):
                 succeeded += 1
     return {
-        "message": f"Discovered and processed {succeeded}/{len(urls)}\
-              documents in {service}",
+        "message": f"Processed {succeeded}/{len(urls)}\
+              discovered document URLs from {service}",
         "service": service
     }
 
@@ -235,13 +235,12 @@ async def make_query(query: LLMQuery):
     extension_response = {
         "results": []
     }
-    print(query)
     # For each case, search the vector database for results
-    for query_text in query.tosdr_cases:
+    for q in query.tosdr_cases:
         result = {}
         query_response = await asyncio.to_thread(
             db.similarity_search,
-            query=query_text,
+            query=q["text"],
             k=4,
             filter={"service": query.service},
             include=["documents", "metadatas"]
@@ -263,12 +262,12 @@ async def make_query(query: LLMQuery):
             ]
         )
         prompt = template.format(
-            query=query_text,
+            query=q["text"],
             results=[doc.page_content for doc in query_response]
         )
-        # print("="*100)
-        # print(prompt)
-        # print("="*100)
+        print("="*100)
+        print(prompt)
+        print("="*100)
 
         llm_response = llm(prompt)
         print(llm_response)
@@ -280,7 +279,7 @@ async def make_query(query: LLMQuery):
             source_text = chosen_doc.page_content if choice != 0 else ""
             # TODO: Fix field duplication later
             result["source_text"] = source_text
-            result["tosdr_case"] = query_text
+            result["tosdr_case"] = q
             result["source_doc"] = chosen_doc.metadata["name"]
             result["source_url"] = chosen_doc.metadata["url"]
             result["source_service"] = chosen_doc.metadata["service"]

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Union, List
+from typing import Union, List, Dict
 
 
 class URL(BaseModel):
@@ -14,6 +14,6 @@ class SourceDocument(BaseModel):
 
 
 class LLMQuery(BaseModel):
-    tosdr_cases: List[str]
+    tosdr_cases: List[Dict[str, str]]
     service: Union[str, None]
     doc_name: Union[str, None]

@@ -16,52 +16,145 @@ function App() {
   const [currentService, setCurrentService] = useState("");
   const [results, setResults] = useState([]);
   const [theme, setTheme] = useState('light');
-
+  
+  const [ratingMap] = useState({
+    neutral: '📋',
+    warning: '⚠️',
+    positive: '✅',
+    negative: '❌'
+  })
   // Stores tosdr points by category so they can be selected in the menu
   const [queryCategories, setQueryCategories] = useState(
     [
       {
         'name': '📒 Account policies',
         'cases': [
-          'This service can delete your account without prior notice and without a reason',
-          'You must provide your legal name, pseudonyms are not allowed',
-          'User accounts can be terminated after having been in breach of the terms of service repeatedly'
+          {
+            'text': 'This service can delete your account without prior notice and without a reason',
+            'rating': 'neutral'
+          },
+          {
+            'text': 'You must provide your legal name, pseudonyms are not allowed',
+            'rating': 'negative'
+          },
+          {
+            'text': 'User accounts can be terminated after having been in breach of the terms of service repeatedly',
+            'rating': 'neutral'
+          },
+          {
+            'text': 'This service can be used without providing a user profile',
+            'rating': 'good'
+          }
         ],
         'checked': false
       },
       {
         'name': '👁️ Tracking and data collection',
         'cases': [
-          'This service tracks you on other websites',
-          'This service may collect, use, and share location data',
-          'Third party cookies are used for advertising',
-          'Tracking via third-party cookies for other purposes without your consent',
-          'The service may use tracking pixels, web beacons, browser fingerprinting, and/or device fingerprinting on users',
-          'This service receives your precise location through GPS coordinates',
-          'Your biometric data is collected',
-          'This service still tracks you even if you opted out from tracking'
+          {
+            'text': 'This service tracks you on other websites',
+            'rating': 'negative'
+          },
+          {
+            'text': 'This service may collect, use, and share location data',
+            'rating': 'negative'
+          },
+          {
+            'text': 'Third party cookies are used for advertising',
+            'rating': 'warning'
+          },
+          {
+            'text': 'Tracking via third-party cookies for other purposes without your consent',
+            'rating': 'negative'
+          },
+          {
+            'text': 'The service may use tracking pixels, web beacons, browser fingerprinting, and/or device fingerprinting on users',
+            'rating': 'negative'
+          },
+          {
+            'text': 'This service receives your precise location through GPS coordinates',
+            'rating': 'negative'
+          },
+          {
+            'text': 'Your biometric data is collected',
+            'rating': 'negative'
+          },
+          {
+            'text': 'This service still tracks you even if you opted out from tracking',
+            'rating': 'negative'
+          },
+          {
+            'text': 'The cookies used only collect anonymous, aggregated data that cannot be linked to a unique identity.',
+            'rating': 'positive'
+          }
         ],
         'checked': false
       },
       {
         'name': '📁 Data storage and retention',
         'cases': [
-          'This service stores your data whether you have an account or not',
-          'This service stores data on you even if you did not interact with the service',
-          'The service can sell or otherwise transfer your personal data as part of a bankruptcy proceeding or other type of financial transaction.',
-          'This service may keep personal data after a request for erasure for business interests or legal obligations'
+          {
+            'text': 'This service stores your data whether you have an account or not',
+            'rating': 'negative'
+          },
+          {
+            'text': 'This service stores data on you even if you did not interact with the service',
+            'rating': 'negative'
+          },
+          {
+            'text': 'The service can sell or otherwise transfer your personal data as part of a bankruptcy proceeding or other type of financial transaction.',
+            'rating': 'negative'
+          },
+          {
+            'text': 'This service may keep personal data after a request for erasure for business interests or legal obligations',
+            'rating': 'negative'
+          },
+          {
+            'text': 'The service may keep a secure, anonymized record of your data for analytical purposes even after the data retention period',
+            'rating': 'negative'
+          }
         ],
         'checked': false
       },
       {
         'name': '⚖️ Legal rights',
         'cases': [
-          'You waive your moral rights',
-          'This service retains rights to your content even after you stop using your account',
-          'You waive your right to a class action.',
-          'You have the right to leave this service at any time',
-          'You agree to defend, indemnify, and hold the service harmless in case of a claim related to your use of the service',
-          'This service forces users into binding arbitration in the case of disputes'
+          {
+            'text': 'Terms may be changed any time at their discretion, without notice to you',
+            'rating': 'warning'
+          },
+          {
+            'text': 'You waive your moral rights',
+            'rating': 'negative'
+          },
+          {
+            'text': 'This service retains rights to your content even after you stop using your account',
+            'rating': 'negative'
+          },
+          {
+            'text': 'You waive your right to a class action.',
+            'rating': 'negative'
+          },
+          {
+            'text': 'You have the right to leave this service at any time',
+            'rating': 'positive'
+          },
+          {
+            'text': 'The service will resist legal requests for your information where reasonably possible',
+            'rating': 'positive'
+          },
+          {
+            'text': 'You agree to defend, indemnify, and hold the service harmless in case of a claim related to your use of the service',
+            'rating': 'negative'
+          },
+          {
+            'text': 'This service forces users into binding arbitration in the case of disputes',
+            'rating': 'negative'
+          },
+          {
+            'text': 'Any liability on behalf of the service is only limited to the fees you paid as a user',
+            'rating': 'negative'
+          }
         ],
         'checked': false
       }
@@ -82,7 +175,7 @@ function App() {
       setIsLoading(false);
       setBackendResponse(msg);
       setShowAlert(true);
-      if (msg.error === false && (msg.type === 'upload_content' || msg.type === 'upload_url' || msg.type === 'upload')) {
+      if (msg.error === false && (msg.type === 'upload_content' || msg.type === 'upload_url')) {
         // Handle manual content upload success
         // if we successfully uploaded then add to the list of services and docs 
         setServices(prevServices => {
@@ -177,9 +270,8 @@ function App() {
     return;
   }
 
-  function clearData() {
+  function clearResults() {
     setResults([]);
-    setServices({});
   }
 
   return (
@@ -239,7 +331,7 @@ function App() {
             
             {/* <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAnalyze}> 👁️ Analyze current page</button> */}
             <button className="btn btn-lg btn-secondary btn-wide btn-active w-full" onClick={handleAutoAnalyze}>🔍 Discover documents</button>
-            <button className="btn btn-lg btn-accent btn-wide btn-active w-full" onClick={clearData}>🗑️ Clear data</button>
+            <button className="btn btn-lg btn-accent btn-wide btn-active w-full" onClick={clearResults}>🗑️ Clear results</button>
         </div>
         {
           results.length > 0 && (
@@ -254,7 +346,7 @@ function App() {
                 <div className="collapse collapse-arrow">
                   <input type="checkbox" />
                   <div className="collapse-title text-xl font-bold">
-                    ⚠️ {item.tosdr_case}
+                    {ratingMap[item.tosdr_case.rating]} {item.tosdr_case.text}
                   </div>
                   <div className="collapse-content"> 
                     <div className="divider divider-error">

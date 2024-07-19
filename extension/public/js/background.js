@@ -70,6 +70,31 @@ function injectGetContent() {
   });
 }
 
+// function injectGetFavicon() {
+//   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+//     let currentTabId = tabs[0].id;
+//     console.log("Current Tab ID: ", currentTabId);
+//     if (userBrowser == "Chrome") {
+//       chrome.scripting.executeScript({
+//         target: { tabId: currentTabId },
+//         files: ["/js/getFavicon.js"]
+//       }, () => {
+//         if (chrome.runtime.lastError) {
+//           console.error("Error injecting scripts: ", chrome.runtime.lastError);
+//         }
+//       });
+//     }
+//     else if (userBrowser == "Firefox") {
+//       browser.tabs.executeScript(currentTabId, { file: '/js/getFavicon.js'})
+//       .then(() => {
+//         console.log("Script injected successfully.");
+//       }).catch((error) => {
+//         console.error("Error injecting scripts: ", error);
+//       });
+//     }
+//   });
+// }
+
 function chunkArray(array, chunkSize) {
   return array.reduce((result, item, index) => {
     const chunkIndex = Math.floor(index / chunkSize);
@@ -85,6 +110,7 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("Extension initialized.");
 });
 
+let resultsCache = {}
 let tosdr_cases = [];
 const query_endpoint = 'http://127.0.0.1:8000/query';
 const url_upload_endpoint = 'http://127.0.0.1:8000/add_from_url';
@@ -246,6 +272,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // chunk cases so user spends less time waiting
     let chunked_cases = chunkArray(tosdr_cases, 3)
     let promises = []
+    if (resultsCache.hasOwnProperty(msg.service)) {
+      // If we've already analyzed this service before, send the cached results
+      chrome.runtime.sendMessage({
+        action: 'updateResults',
+        data: { 'results': resultsCache[msg.service] }
+      })
+      // Tell the user we're giving them the cached results
+      chrome.runtime.sendMessage({
+        action: 'backendResponse',
+        message: 'Returning cached results for' + msg.service
+      })
+    }
+    else {
+      // Initialize the empty array
+      resultsCache[msg.service] = []
+    }
     for (let i=0; i<chunked_cases.length; i++) {
       let promise = fetch(query_endpoint, {
         method: 'POST',
@@ -262,9 +304,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         console.log("Response from backend received: ", data);
         chrome.runtime.sendMessage({
           action: 'updateResults',
-          data: data,
-          source: msg.source,
+          data: data
         });
+          // Store it in the results log
+          resultsCache[msg.service].push(...data['results'])
       })
       .catch(error => {
         console.log("Error in fetching: ", error);
