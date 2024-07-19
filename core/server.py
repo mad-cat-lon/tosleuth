@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from typing import Union, List
+from typing import List
 import json
 import asyncio
 import chromadb
@@ -9,11 +9,16 @@ import tldextract
 # from sentence_transformers import CrossEncoder
 
 from langchain.vectorstores import Chroma
-from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain.embeddings.sentence_transformer import (
+    SentenceTransformerEmbeddings
+)
 from langchain.document_transformers import Html2TextTransformer
 from langchain.schema.document import Document
 from langchain.llms.fireworks import Fireworks
-from langchain.text_splitter import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter, MarkdownTextSplitter
+from langchain.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    MarkdownHeaderTextSplitter
+)
 from fastapi.middleware.cors import CORSMiddleware
 
 from prompts import RAGQueryPromptTemplate
@@ -37,7 +42,9 @@ load_dotenv()
 print("Setting up vector store...")
 # Handling vector store
 # Initialize persistent client and collection 
-embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+embedding_function = SentenceTransformerEmbeddings(
+    model_name="all-MiniLM-L6-v2"
+)
 client = chromadb.PersistentClient(path="vecdb")
 collection = client.get_or_create_collection("vecdb")
 db = Chroma(
@@ -45,7 +52,6 @@ db = Chroma(
     collection_name="vecdb",
     embedding_function=embedding_function
 )
-# reranker_model = CrossEncoder(model_name="BAAI/bge-reranker-large", max_length=512)
 print("Loaded vector store...")
 fireworks_models = {
     # Smallest model, semi-functional
@@ -93,8 +99,8 @@ llm = Fireworks(
 @app.post("/add", status_code=200)
 async def add_src_document(src_doc: SourceDocument):
     """
-    Gets a SourceDocument object from user's POST request body
-    containing the raw HTML of the page, parses it, chunks it
+    Gets a SourceDocument object from user's POSTrequest body
+    containing the raw HTML of the page, parses i, chunks it
     and vectorizes it
     """
     print(f"Adding {src_doc.name} from {src_doc.service}")
@@ -120,7 +126,11 @@ async def add_src_document(src_doc: SourceDocument):
         }
     )
     if query_response["documents"]:
-        raise HTTPException(status_code=400, detail={"message": f"Document {src_doc.url} for service {src_doc.service} already exists in the database"})
+        raise HTTPException(status_code=400, detail={
+            "message": f"Document {src_doc.url} for service \
+                {src_doc.service} already exists in the database"
+            }
+        )
     
     # Create Langchain Document object from our request
     original_doc = Document(
@@ -158,9 +168,15 @@ async def add_src_document(src_doc: SourceDocument):
     db.add_texts(
         texts=[chunk.page_content for chunk in final_chunks],
         # Add the original document metadata containing service, url and name
-        metadatas=[{**original_doc.metadata, **chunk.metadata} for chunk in final_chunks]
+        metadatas=[
+            {**original_doc.metadata, **chunk.metadata}
+            for chunk in final_chunks
+        ]
     )
-    return {"message": f"Successfully added document {src_doc.name} from {src_doc.service} to the vector store."}
+    return {
+        "message": f"Successfully added document {src_doc.name} \
+            from {src_doc.service} to the vector store."
+        }
 
 
 async def scrape_raw_document_from_url(browser, url, service):
@@ -186,6 +202,7 @@ async def scrape_raw_document_from_url(browser, url, service):
     except Exception:
         return False
 
+
 @app.post("/add_from_url", status_code=200)
 async def add_src_document_from_url(urls: List[URL]):
     """
@@ -200,11 +217,12 @@ async def add_src_document_from_url(urls: List[URL]):
             if await scrape_raw_document_from_url(browser, url.url, service):
                 succeeded += 1
     return {
-        "message": f"Discovered and processed {succeeded}/{len(urls)} documents in {service}",
+        "message": f"Discovered and processed {succeeded}/{len(urls)}\
+              documents in {service}",
         "service": service
         }
 
-    
+
 @app.post("/query", status_code=200)
 async def make_query(query: LLMQuery):
     """
@@ -272,7 +290,7 @@ async def make_query(query: LLMQuery):
                 # Model chose 0 
                 result["error"] = 1
         except json.JSONDecodeError:
-            print(f"Error decoding response from model")
+            print("Error decoding response from model")
             result["error"] = 2
         extension_response["results"].append(result)
     return extension_response

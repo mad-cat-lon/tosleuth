@@ -1,4 +1,6 @@
-# tosleuth
+# tosleuth 
+[![PEP8](https://img.shields.io/badge/code%20style-pep8-orange.svg)](https://www.python.org/dev/peps/pep-0008/)  ![flake8](https://github.com/mad-cat-lon/actions/workflows/pep8_check.yml/badge.svg) 
+
 A cross-platform LLM-powered browser extension that uses [Firefunction-v2](https://fireworks.ai/blog/firefunction-v2-launch-post) to automatically analyze website ToS agreements / privacy policies and present them in an easily understandable manner, based off of [ToS;DR](https://tosdr.org/en/frontpage). 
 
 ## Quick usage guide
