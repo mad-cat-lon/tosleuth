@@ -3,8 +3,8 @@ from pydantic import BaseModel, validator
 
 PROMPT = """
 <|system|>
-You are an expert lawyer analyzing terms of service agreements. Given a statement about the service and 4 pieces of text extracted from its documents, pick the number of the text that directly answers the query in its entirety. Output a valid JSON object containing the choice of text and concise reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false. 
-Here are some examples: 
+You are an expert lawyer analyzing terms of service agreements. Given a statement about the service and 4 pieces of text extracted from its documents, pick the number of the text that directly answers the query in its entirety. Output a valid JSON object containing the choice of text and concise reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false.
+Here are some examples:
 
 Given the statement "You sign away all moral rights", which of the following texts, if any, answer it fully?
 
@@ -21,7 +21,7 @@ Given the statement "You sign away all moral rights", which of the following tex
 "You will not license, sell, or transfer your Account without our prior written approval."
 ```
 4)
-```"By submitting Your Content to the Services, you represent and warrant that you have all rights, power, and authority necessary to grant the rights to Your Content contained within these Terms. Because you alone are responsible for Your 
+```"By submitting Your Content to the Services, you represent and warrant that you have all rights, power, and authority necessary to grant the rights to Your Content contained within these Terms. Because you alone are responsible for Your
 Content, you may expose yourself to liability if you post or share Content without all necessary rights."
 ```
 {{
@@ -30,7 +30,7 @@ Content, you may expose yourself to liability if you post or share Content witho
     "answer": true
 }}
 
-Given the statement 'The cookies used only collect anonymous, aggregated data that cannot be linked to a unique identity', which text answers it fully? 
+Given the statement 'The cookies used only collect anonymous, aggregated data that cannot be linked to a unique identity', which text answers it fully?
 1)
 ```
 personalized, unique and relevant offering, as this is why users come to the
@@ -104,12 +104,13 @@ Given the statement "{query}", which text provides enough context to explicitly 
 
 n_results = 4
 
+
 class RAGQueryPromptTemplate(StringPromptTemplate, BaseModel):
     """
     Custom prompt template that takes in the query (a TOSDR case like "This service can read your messages")
     and formats the prompt template to provide the query and the 4 texts returned from the vector store
     """
-    
+
     def format(self, **kwargs) -> str:
         prompt = PROMPT.format(
             query=kwargs["query"],
@@ -119,4 +120,3 @@ class RAGQueryPromptTemplate(StringPromptTemplate, BaseModel):
             result4=kwargs["results"][3],
         )
         return prompt
-    

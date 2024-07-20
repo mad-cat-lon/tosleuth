@@ -41,7 +41,7 @@ app.add_middleware(
 load_dotenv()
 print("Setting up vector store...")
 # Handling vector store
-# Initialize persistent client and collection 
+# Initialize persistent client and collection
 embedding_function = SentenceTransformerEmbeddings(
     model_name="all-MiniLM-L6-v2"
 )
@@ -133,7 +133,7 @@ async def add_src_document(src_doc: SourceDocument):
                 {src_doc.service} already exists in the database"
             }
         )
-    
+
     # Create Langchain Document object from our request
     original_doc = Document(
         page_content=src_doc.text,
@@ -141,7 +141,7 @@ async def add_src_document(src_doc: SourceDocument):
             "service": src_doc.service,
             "url": src_doc.url,
             "name": src_doc.name
-        } 
+        }
     )
     # Turn HTML of page into markdown
     html2text = Html2TextTransformer()
@@ -157,7 +157,7 @@ async def add_src_document(src_doc: SourceDocument):
         headers_to_split_on=headers_to_split_on
     )
     split_by_headers = md_header_splitter.split_text(md_doc.page_content)
-    
+
     # Go through each markdown chunk and recursively split
     recursive_char_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
@@ -188,7 +188,7 @@ async def scrape_raw_document_from_url(browser, url, service):
         html = await page.content()
         # Only get the domain without subdomain to avoid cases
         # where the service would be "github.com" but source doc links
-        # are in "docs.github.com" 
+        # are in "docs.github.com"
         name = await page.title()
         src_doc = SourceDocument(
             service=service,
@@ -248,7 +248,7 @@ async def make_query(query: LLMQuery):
         # print(query_response)
         if len(query_response) < 4:
             result["error"] = 0
-            extension_response["results"].append(result)            
+            extension_response["results"].append(result)
             continue
         # For each returned text from the vector store, insert into prompt,
         # send to model and parse response
@@ -265,9 +265,9 @@ async def make_query(query: LLMQuery):
             query=q["text"],
             results=[doc.page_content for doc in query_response]
         )
-        print("="*100)
+        print("=" * 100)
         print(prompt)
-        print("="*100)
+        print("=" * 100)
 
         llm_response = llm(prompt)
         print(llm_response)
@@ -288,11 +288,10 @@ async def make_query(query: LLMQuery):
             if source_text:
                 result["error"] = None
             else:
-                # Model chose 0 
+                # Model chose 0
                 result["error"] = 1
         except json.JSONDecodeError:
             print("Error decoding response from model")
             result["error"] = 2
         extension_response["results"].append(result)
     return extension_response
-           
