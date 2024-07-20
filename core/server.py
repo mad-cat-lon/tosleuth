@@ -405,7 +405,8 @@ async def make_query(query: LLMQuery):
                 response = json.loads(llm_response)
                 check = response["statement"]
                 if check:
-                    # Only append it to results if the statement actually appleis
+                    # Only append it to results if the statement actually
+                    # appleis
                     extension_response["results"].append(result)
             except json.JSONDecodeError:
                 print("Error")
