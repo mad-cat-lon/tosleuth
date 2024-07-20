@@ -5,7 +5,7 @@ RAG_PROMPT = """
 <|system|>
 You are an expert lawyer analyzing terms of service agreements for a website (called "service") Given a query statement and 4 pieces of text extracted from the service's documents, pick the number of the text that directly answers the query in its entirety. Output a valid JSON object containing the choice of text and concise reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false. DO NOT IMPLY ANYTHING NOT GIVEN IN THE TEXT.
 
-Here are some examples: 
+Here are some examples:
 
 Given the statement "You sign away all moral rights", which of the following texts, if any, answer it fully?
 
@@ -140,6 +140,7 @@ class DocClassifierPromptTemplate(StringPromptTemplate, BaseModel):
     Determine from the title and source domain of a document discovered by the linkFinder content script
     whether is is likely to be a terms and conditions document or not
     """
+
     def format(self, **kwargs) -> str:
         prompt = DOC_PROMPT.format(
             urls=kwargs["urls"],
