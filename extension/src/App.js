@@ -43,7 +43,7 @@ function App() {
           },
           {
             'text': 'This service can be used without providing a user profile',
-            'rating': 'good'
+            'rating': 'positive'
           }
         ],
         'checked': false
@@ -51,6 +51,10 @@ function App() {
       {
         'name': '👁️ Tracking and data collection',
         'cases': [
+          {
+            'text': 'This service does not track your IP address',
+            'rating': 'positive'
+          },
           {
             'text': 'This service tracks you on other websites',
             'rating': 'negative'
@@ -64,7 +68,7 @@ function App() {
             'rating': 'warning'
           },
           {
-            'text': 'Tracking via third-party cookies for other purposes without your consent',
+            'text': 'This service tracks you via third-party cookies for other purposes without your consent',
             'rating': 'negative'
           },
           {
@@ -76,7 +80,7 @@ function App() {
             'rating': 'negative'
           },
           {
-            'text': 'Your biometric data is collected',
+            'text': 'This service collects your biometric data',
             'rating': 'negative'
           },
           {
@@ -84,7 +88,7 @@ function App() {
             'rating': 'negative'
           },
           {
-            'text': 'The cookies used only collect anonymous, aggregated data that cannot be linked to a unique identity.',
+            'text': 'This service uses cookies that only collect anonymous, aggregated data that cannot be linked to a unique identity.',
             'rating': 'positive'
           }
         ],
@@ -120,7 +124,7 @@ function App() {
         'name': '⚖️ Legal rights',
         'cases': [
           {
-            'text': 'Terms may be changed any time at their discretion, without notice to you',
+            'text': 'This service may change their terms at any time at their discretion, without notice to you',
             'rating': 'warning'
           },
           {
@@ -256,7 +260,7 @@ function App() {
 
   const handleSubmitQueryCategories = () => {
     browser.runtime.sendMessage({
-      action: 'addQueries',
+      action: 'updateQueries',
       data: queryCategories
             .filter(
               query => query.checked === true
@@ -342,7 +346,6 @@ function App() {
           {results.map((item, index) => (
             <>
             {
-              item.answer && (
                 <div className="collapse collapse-arrow">
                   <input type="checkbox" />
                   <div className="collapse-title text-xl font-bold">
@@ -361,7 +364,6 @@ function App() {
                     <p className="text-base">{item.reason}</p>
                   </div>
                 </div>
-              )
             }
             </>
           ))}

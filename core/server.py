@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-from typing import List
 import json
 import asyncio
 import chromadb
@@ -21,8 +20,16 @@ from langchain.text_splitter import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 
-from prompts import RAGQueryPromptTemplate
-from models import URL, SourceDocument, LLMQuery
+from prompts import (
+    RAGQueryPromptTemplate,
+    DocClassifierPromptTemplate,
+    VerifyStatementPromptTemplate
+)
+from models import (
+    ScrapedURLs,
+    SourceDocument,
+    LLMQuery
+)
 
 app = FastAPI()
 # storage = VectorStore()
@@ -59,10 +66,14 @@ fireworks_models = {
     # Decent functionality, poor accuracy
     "zephyr-7b": "accounts/fireworks/models/zephyr-7b-beta",
     # Expensive and capable Mixtral finetune
-    "firefunction": "accounts/fireworks/models/firefunction-v1"
+    "firefunction-v1": "accounts/fireworks/models/firefunction-v1",
+    "firefunction-v2": "accounts/fireworks/models/firefunction-v2"
+
 }
-llm = Fireworks(
-    model=fireworks_models["firefunction"],
+
+# llm for rag queries
+query_llm = Fireworks(
+    model=fireworks_models["firefunction-v2"],
     model_kwargs={
         "temperature": 0.1,
         "max_tokens": 150,
@@ -95,9 +106,60 @@ llm = Fireworks(
     }
 )
 
+# llm for verifying query statement
+verifier_llm = Fireworks(
+    model=fireworks_models["firefunction-v2"],
+    model_kwargs={
+        "temperature": 0.1,
+        "max_tokens": 100,
+        "top_p": 1.0,
+        "response_format": {
+            "type": "json_object",
+            "schema": """{
+                "type": "object",
+                "properties": {
+                "statement": {
+                    "type": "boolean"
+                }
+                },
+                "required": [
+                    "statement"
+                ]
+            }"""
+        }
+    }
+)
+
+# llm for determining documents
+doc_classifer_llm = Fireworks(
+    model=fireworks_models["firefunction-v2"],
+    model_kwargs={
+        "temperature": 0.1,
+        "max_tokens": 500,
+        "top_p": 1.0,
+        "response_format": {
+            "type": "json_object",
+            "schema": """{
+                "type" : "object",
+                "properties": {
+                "valid_urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+                },
+                "required": [
+                    "valid_urls"
+                ]
+            }"""
+        }
+    }
+)
+
 
 @app.post("/add", status_code=200)
-async def add_src_document(src_doc: SourceDocument):
+async def add_src_doc(src_doc: SourceDocument):
     """
     Gets a SourceDocument object from user's POSTrequest body
     containing the raw HTML of the page, parses i, chunks it
@@ -181,7 +243,7 @@ async def add_src_document(src_doc: SourceDocument):
     }
 
 
-async def scrape_raw_document_from_url(browser, url, service):
+async def scrape_src_doc(browser, url, service):
     try:
         page = await browser.new_page()
         await page.goto(url)
@@ -190,14 +252,14 @@ async def scrape_raw_document_from_url(browser, url, service):
         # where the service would be "github.com" but source doc links
         # are in "docs.github.com"
         name = await page.title()
-        src_doc = SourceDocument(
-            service=service,
-            url=url,
-            name=name,
-            text=html
-        )
         try:
-            await add_src_document(src_doc)
+            src_doc = SourceDocument(
+                service=service,
+                url=url,
+                name=name,
+                text=html
+            )
+            await add_src_doc(src_doc)
             return True
         except HTTPException:
             return False
@@ -205,21 +267,48 @@ async def scrape_raw_document_from_url(browser, url, service):
         return False
 
 
+async def classify_urls(urls, service):
+    """
+    Uses the LLM to identify which scraped URLs are likely
+    to contain the T&C documents or not before we add them to the DB
+    """
+    template = DocClassifierPromptTemplate(
+        input_variables=[
+            "urls",
+            "source"
+        ]
+    )
+    # Format the URLs first
+    urls = "\n".join(urls)
+    prompt = template.format(
+        urls=urls,
+        source=service
+    )
+    llm_response = doc_classifer_llm(prompt)
+    try:
+        response = json.loads(llm_response)
+        return response["valid_urls"]
+    except Exception:
+        return None
+
+
 @app.post("/add_from_url", status_code=200)
-async def add_src_document_from_url(urls: List[URL]):
+async def add_src_doc_from_url(scraped_urls: ScrapedURLs):
     """
-    Gets a URL to a resource and retrieves the raw document
+    Handles the URLs that have been scraped from the current page
     """
-    # Assuming all the docs will have the same domain
-    service = tldextract.extract(urls[0].url).registered_domain
+
+    service = tldextract.extract(scraped_urls.source_url).registered_domain
+    urls = scraped_urls.urls
+    valid_urls = await classify_urls(urls, service)
     succeeded = 0
     async with async_playwright() as p:
         browser = await p.firefox.launch(headless=True)
-        for url in urls:
-            if await scrape_raw_document_from_url(browser, url.url, service):
+        for url in valid_urls:
+            if await scrape_src_doc(browser, url, service):
                 succeeded += 1
     return {
-        "message": f"Processed {succeeded}/{len(urls)}\
+        "message": f"Processed {succeeded}/{len(valid_urls)}\
               discovered document URLs from {service}",
         "service": service
     }
@@ -236,11 +325,11 @@ async def make_query(query: LLMQuery):
         "results": []
     }
     # For each case, search the vector database for results
-    for q in query.tosdr_cases:
+    for case in query.tosdr_cases:
         result = {}
         query_response = await asyncio.to_thread(
             db.similarity_search,
-            query=q["text"],
+            query=case["text"],
             k=4,
             filter={"service": query.service},
             include=["documents", "metadatas"]
@@ -252,7 +341,7 @@ async def make_query(query: LLMQuery):
             continue
         # For each returned text from the vector store, insert into prompt,
         # send to model and parse response
-        template = RAGQueryPromptTemplate(
+        query_template = RAGQueryPromptTemplate(
             input_variables=[
                 "query",
                 "result1",
@@ -261,16 +350,16 @@ async def make_query(query: LLMQuery):
                 "result4"
             ]
         )
-        prompt = template.format(
-            query=q["text"],
+        query_prompt = query_template.format(
+            query=case["text"],
             results=[doc.page_content for doc in query_response]
         )
-        print("=" * 100)
-        print(prompt)
-        print("=" * 100)
+        # print("="*100)
+        # print(query_prompt)
+        # print("="*100)
 
-        llm_response = llm(prompt)
-        print(llm_response)
+        llm_response = query_llm(query_prompt)
+        # print(llm_response)
         try:
             response = json.loads(llm_response)
             # Extract the choice
@@ -279,7 +368,7 @@ async def make_query(query: LLMQuery):
             source_text = chosen_doc.page_content if choice != 0 else ""
             # TODO: Fix field duplication later
             result["source_text"] = source_text
-            result["tosdr_case"] = q
+            result["tosdr_case"] = case
             result["source_doc"] = chosen_doc.metadata["name"]
             result["source_url"] = chosen_doc.metadata["url"]
             result["source_service"] = chosen_doc.metadata["service"]
@@ -288,10 +377,36 @@ async def make_query(query: LLMQuery):
             if source_text:
                 result["error"] = None
             else:
-                # Model chose 0
-                result["error"] = 1
+                # Model chose 0, none of the texts are relevant
+                result["error"] = "irrelevant"
         except json.JSONDecodeError:
-            print("Error decoding response from model")
-            result["error"] = 2
-        extension_response["results"].append(result)
+            result["error"] = "json"
+        if not result["error"] and result["answer"]:
+            # Verify the statement if there is no error and a source text
+            # has been picked
+            verify_template = VerifyStatementPromptTemplate(
+                input_variables=[
+                    "service",
+                    "case",
+                    "text"
+                ]
+            )
+            verify_prompt = verify_template.format(
+                service=query.service,
+                case=result["tosdr_case"]["text"],
+                text=result["source_text"]
+            )
+            llm_response = verifier_llm(verify_prompt)
+            # print("="*100)
+            # print(verify_prompt)
+            # print("="*100)
+            # print(llm_response)
+            try:
+                response = json.loads(llm_response)
+                check = response["statement"]
+                if check:
+                    # Only append it to results if the statement actually appleis
+                    extension_response["results"].append(result)
+            except json.JSONDecodeError:
+                print("Error")
     return extension_response

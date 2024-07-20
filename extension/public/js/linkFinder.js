@@ -10,7 +10,8 @@ function removeQueryAndHash(url) {
 
 function findLegalLinks() {
   const links = Array.from(document.links);
-  console.log(links)
+  const currUrl = window.location.href
+  // simple regex test 
   let legalLinks = links.filter(link => {
     return /terms|privacy|legal|policy/i.test(link.href);
   });
@@ -18,8 +19,9 @@ function findLegalLinks() {
   legalLinks = removeDuplicates(legalLinks)
   console.log(legalLinks);
   chrome.runtime.sendMessage({
-    action: 'retrieveContent',
-    urls: legalLinks
+    action: 'scrapedURLs',
+    urls: legalLinks,
+    source_url: currUrl
   })
 }
     
