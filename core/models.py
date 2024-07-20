@@ -6,6 +6,11 @@ class URL(BaseModel):
     url: str
 
 
+class ScrapedURLs(BaseModel):
+    urls: List[str]
+    source_url: str
+    
+    
 class SourceDocument(BaseModel):
     service: str
     url: str

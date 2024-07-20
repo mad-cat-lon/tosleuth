@@ -1,9 +1,10 @@
 from langchain.prompts import StringPromptTemplate
 from pydantic import BaseModel, validator
 
-PROMPT = """
+RAG_PROMPT = """
 <|system|>
-You are an expert lawyer analyzing terms of service agreements. Given a statement about the service and 4 pieces of text extracted from its documents, pick the number of the text that directly answers the query in its entirety. Output a valid JSON object containing the choice of text and concise reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false. 
+You are an expert lawyer analyzing terms of service agreements for a website (called "service") Given a query statement and 4 pieces of text extracted from the service's documents, pick the number of the text that directly answers the query in its entirety. Output a valid JSON object containing the choice of text and concise reasoning. If none of the texts can explicitly answer the statement, return 0. If there is a text that answers the question, set the "answer" field to true. In all other cases, set it to false. DO NOT IMPLY ANYTHING NOT GIVEN IN THE TEXT.
+
 Here are some examples: 
 
 Given the statement "You sign away all moral rights", which of the following texts, if any, answer it fully?
@@ -41,9 +42,6 @@ Service.
 * Location information
 * Log data
 * Information from cookie data and similar technologies (To find out more about how we use cookies, please see our Cookie Policy)
-* Device information
-* Usage data and inferences
-* User choices
 ```
 2)
 ```
@@ -55,9 +53,6 @@ these purposes. To do so, visit your Privacy and Data Settings.
 When we use cookies to learn about your behavior on or off of our services, we
 or our partners will obtain consent that we may need under applicable law. To
 find out more about how we use cookies, please see our Cookie Policy.
-Additional Info for EEA, Swiss and UK Data Subjects: Legal bases we rely on
-where we use your information
-The below section only applies for residents in the EEA, Switzerland, and UK.
 ```
 4)
 ```
@@ -81,7 +76,7 @@ include any of the following:
 }}
 </s>
 <|user|>
-Given the statement "{query}", which text provides enough context to explicitly answer the entire statement? Do not infer or imply anything not provided in the texts. Answer with a single JSON object as demonstrated above.
+Given the statement "{query}", which text provides enough context to explicitly answer the entire statement? Answer with a single JSON object as demonstrated above. DO NOT IMPLY ANYTHING NOT GIVEN IN THE TEXT.
 1)
 ```
 {result1}
@@ -102,7 +97,56 @@ Given the statement "{query}", which text provides enough context to explicitly 
 <|assistant|>
 """
 
-n_results = 4
+DOC_PROMPT = """
+<|user|>
+Respond with a JSON object with all the URLs that are likely to contain the terms and conditions,
+user agreements, cookie policy, privacy policy etc. for {source} like so:
+{{
+    "valid_urls": ["https://example.com/terms", "https://example.com/legal/cookies"]
+}}
+Here are the URLs.
+{urls}
+</s>
+<|assistant|>
+"""
+
+VERIFY_PROMPT = """
+<|user|>
+Given a statement about the service {service} and a piece of text that answers it, respond with a JSON object indicating if the statement is true or false like so:
+{{
+    "statement": bool
+}}
+Statement:
+{statement}
+Text:
+{text}
+</s>
+<|assistant|>
+"""
+
+
+class VerifyStatementPromptTemplate(StringPromptTemplate, BaseModel):
+    def format(self, **kwargs) -> str:
+        prompt = VERIFY_PROMPT.format(
+            service=kwargs["service"],
+            statement=kwargs["case"],
+            text=kwargs["text"]
+        )
+        return prompt
+
+
+class DocClassifierPromptTemplate(StringPromptTemplate, BaseModel):
+    """
+    Determine from the title and source domain of a document discovered by the linkFinder content script
+    whether is is likely to be a terms and conditions document or not
+    """
+    def format(self, **kwargs) -> str:
+        prompt = DOC_PROMPT.format(
+            urls=kwargs["urls"],
+            source=kwargs["source"]
+        )
+        return prompt
+
 
 class RAGQueryPromptTemplate(StringPromptTemplate, BaseModel):
     """
@@ -111,7 +155,7 @@ class RAGQueryPromptTemplate(StringPromptTemplate, BaseModel):
     """
     
     def format(self, **kwargs) -> str:
-        prompt = PROMPT.format(
+        prompt = RAG_PROMPT.format(
             query=kwargs["query"],
             result1=kwargs["results"][0],
             result2=kwargs["results"][1],

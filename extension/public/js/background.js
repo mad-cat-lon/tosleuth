@@ -133,20 +133,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     injectGetContent(false);
   }
 
-  if (msg.action === 'addQueries') {
-    console.log('[!] addQueries event received');
+  if (msg.action === 'updateQueries') {
+    console.log('[!] updateQueries event received');
     tosdr_cases = msg.data;
   }
 
-  if (msg.action === 'retrieveContent') {
-    console.log('[!] retrieveContent event received');
+  if (msg.action === 'scrapedURLs') {
+    console.log('[!] scrapedURLs event received');
     // send it to our backend server
     fetch(url_upload_endpoint, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(msg.urls.map(url => ({ url })))
+      body: JSON.stringify({
+        'urls': msg.urls,
+        'source_url': msg.source_url
+      })
     })
     .then(response => {
       if (!response.ok) {
@@ -172,7 +175,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         action: 'backendResponse',
         type: 'upload_url',
         error: true,
-        service: data.service,
         message: error.message
       });
       console.log("Error in fetching: ", error);
