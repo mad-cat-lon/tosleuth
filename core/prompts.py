@@ -22,7 +22,7 @@ Given the statement "You sign away all moral rights", which of the following tex
 "You will not license, sell, or transfer your Account without our prior written approval."
 ```
 4)
-```"By submitting Your Content to the Services, you represent and warrant that you have all rights, power, and authority necessary to grant the rights to Your Content contained within these Terms. Because you alone are responsible for Your 
+```"By submitting Your Content to the Services, you represent and warrant that you have all rights, power, and authority necessary to grant the rights to Your Content contained within these Terms. Because you alone are responsible for Your
 Content, you may expose yourself to liability if you post or share Content without all necessary rights."
 ```
 {{
@@ -31,7 +31,7 @@ Content, you may expose yourself to liability if you post or share Content witho
     "answer": true
 }}
 
-Given the statement 'The cookies used only collect anonymous, aggregated data that cannot be linked to a unique identity', which text answers it fully? 
+Given the statement 'The cookies used only collect anonymous, aggregated data that cannot be linked to a unique identity', which text answers it fully?
 1)
 ```
 personalized, unique and relevant offering, as this is why users come to the
@@ -148,12 +148,13 @@ class DocClassifierPromptTemplate(StringPromptTemplate, BaseModel):
         return prompt
 
 
+
 class RAGQueryPromptTemplate(StringPromptTemplate, BaseModel):
     """
     Custom prompt template that takes in the query (a TOSDR case like "This service can read your messages")
     and formats the prompt template to provide the query and the 4 texts returned from the vector store
     """
-    
+
     def format(self, **kwargs) -> str:
         prompt = RAG_PROMPT.format(
             query=kwargs["query"],
@@ -163,4 +164,3 @@ class RAGQueryPromptTemplate(StringPromptTemplate, BaseModel):
             result4=kwargs["results"][3],
         )
         return prompt
-    
